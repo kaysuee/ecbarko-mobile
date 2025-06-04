@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "C:\\Users\\Administrator\\Documents\\SIDELINE\\ecbarko-mobile\\flutter\\packages\\flutter_tools\\gradle\\src\\main\\groovy\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\Administrator\\Documents\\SIDELINE\\ecbarko-mobile\\ecbarko-mobile\\android\\app\\.cxx\\RelWithDebInfo\\m435z5h1\\x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\Administrator\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\Administrator\\Documents\\SIDELINE\\ecbarko-mobile\\ecbarko-mobile\\android\\app\\.cxx\\RelWithDebInfo\\m435z5h1\\x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}
