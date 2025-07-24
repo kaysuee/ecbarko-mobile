@@ -7,7 +7,6 @@ const CardSchema = new mongoose.Schema({
   type: { type: String, required: true }, 
   status: { type: String},
   lastActive: { type: String}, 
- 
 }, {timestamps: true,
   collection: 'card'  // Explicitly define collection name
 });

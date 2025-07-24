@@ -4,10 +4,13 @@ const User = require('../models/User');
 const Otp = require('../models/otp');
 const Card = require('../models/card');
 const CardHistory = require('../models/cardHistory');
-const ActiveBooking = require('../models/activebooking');
+const ActiveBooking = require('../models/activebooking.js');
+const Eticket = require('../models/eticket');
 const jwt = require('jsonwebtoken');
+const Schedule = require('../models/schedule');
 require('dotenv').config();  
-const sendOtpEmail = require('../utils/email');
+const { sendOtpEmail, sendPDFEmail } = require('../utils/email');
+
 
 
 // GET USER DETAILS
@@ -130,6 +133,18 @@ router.get('/actbooking/:userId', async (req, res) => {
     });
    
   res.status(200).json(formattedBooking);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET Active Booking
+router.get('/schedule', async (req, res) => {
+  try {
+    const schedules = await Schedule.find();
+    if (!schedules) return res.status(404).json({ error: 'Active Booking Not Found' })
+   
+  res.status(200).json(schedules);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -271,6 +286,98 @@ router.post('/send-otp', async (req, res) => {
 });
 
 
+router.post('/eticket', async (req, res) => {
+  try {
+    const {
+      email,
+      user,
+      passengers,
+      departureLocation,
+      arrivalLocation,
+      departDate,
+      departTime,
+      arriveDate,
+      arriveTime,
+      shippingLine,
+      hasVehicle,
+      selectedCardType,
+      vehicleDetail,
+      bookingReference,
+      totalFare,
+      schedcde
+    } = req.body;
+    
+    // Create a new Eticket document
+    const newEticket = new Eticket({
+      user,
+      passengers,
+      departureLocation,
+      arrivalLocation,
+      departDate,
+      departTime,
+      arriveDate,
+      arriveTime,
+      shippingLine,
+      hasVehicle,
+      selectedCardType,
+      status: 'active',
+      vehicleDetail,
+      bookingReference,
+      totalFare
+    });
+
+    // Save to MongoDB
+    await newEticket.save();
+
+
+    const passengerCount = passengers.length;
+    const vehicleCount = hasVehicle && Array.isArray(vehicleDetail)
+      ? vehicleDetail.length
+      : 0;
+      console.log("buddy here",passengerCount);
+      console.log("buddy here2",vehicleCount);
+      console.log("buddy here3",schedcde);
+    await Schedule.updateOne(
+      {
+        schedcde: schedcde,
+      },
+      {
+        $inc: {
+          passengerBooked: passengerCount,
+          vehicleBooked: vehicleCount
+        }
+      }
+    );
+
+    await sendPDFEmail({
+      email,
+      passengers,
+      departureLocation,
+      arrivalLocation,
+      departDate,
+      departTime,
+      arriveDate,
+      arriveTime,
+      shippingLine,
+      hasVehicle,
+      selectedCardType,
+      vehicleDetail,
+      bookingReference,
+      totalFare
+    });
+
+
+    res.status(200).json({
+      message: 'eTicket created successfully',
+      eticketId: newEticket._id,
+    });
+  } catch (error) {
+    console.error('Error saving eTicket:', error);
+    res.status(500).json({ message: 'Failed to create eTicket' });
+  }
+});
+
+
 router.post('/verify-otp', async (req, res) => {
   const { otp } = req.body;
 
@@ -302,6 +409,7 @@ router.post('/send-reset', async (req, res) => {
 
   res.status(200).json({ success: true });
 });
+
 
 async function generateUniqueOtp() {
   let otp;
@@ -366,5 +474,24 @@ router.post('/card', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+router.put('/card/:id', async (req, res) => {
+  console.log('PUT /api/card/:id hit', req.params.id, req.body);  // 🔍
+  try {
+    const cardNumber = req.params.id;
+    const updatedCard = await Card.findOneAndUpdate(
+      { cardNumber: cardNumber },
+      { $set: req.body },
+      { new: true }
+    );
+    if (!updatedCard) {
+      return res.status(404).json({ error: 'card not found.' });
+    }
+    res.status(201).json(updatedCard);
+  } catch (err) {
+    res.status(400).json({ error: 'Failed to update card' });
+  }
+});
+
 
 module.exports = router;
