@@ -3,10 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:EcBarko/constants.dart';
 import 'package:EcBarko/screens/ticket_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:math';
 
-import 'package:EcBarko/screens/booking_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+String getBaseUrl() {
+  return 'https://ecbarko.onrender.com';
+  // return 'http://localhost:3000';
+}
 
 class PaymentScreen extends StatefulWidget {
+  final String schedcde;
   final String departureLocation;
   final String arrivalLocation;
   final String departDate;
@@ -17,12 +26,12 @@ class PaymentScreen extends StatefulWidget {
   final String selectedCardType;
   final List<Map<String, String>> passengers;
   final bool hasVehicle;
-  final String plateNumber;
-  final String carType;
-  final String driverName;
+  final List<Map<String, String>> vehicleDetail;
+  final String bookingReference;
 
-  const PaymentScreen({
+  PaymentScreen({
     super.key,
+    required this.schedcde,
     required this.departureLocation,
     required this.arrivalLocation,
     required this.departDate,
@@ -33,10 +42,16 @@ class PaymentScreen extends StatefulWidget {
     required this.selectedCardType,
     required this.passengers,
     required this.hasVehicle,
-    required this.plateNumber,
-    required this.carType,
-    required this.driverName,
-  });
+    required this.vehicleDetail,
+    String? bookingReference,
+  }) : bookingReference = _generateReference();
+
+  static String _generateReference() {
+    final random = Random();
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return List.generate(8, (index) => chars[random.nextInt(chars.length)])
+        .join();
+  }
 
   @override
   _PaymentScreenState createState() => _PaymentScreenState();
@@ -52,6 +67,46 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void initState() {
     super.initState();
     generateFixedFares();
+  }
+
+  Future<bool> _submit() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('email');
+    final user = prefs.getString('user');
+    final url = Uri.parse('${getBaseUrl()}/api/eticket');
+
+    final body = {
+      "email": email,
+      "user": user,
+      "departureLocation": widget.departureLocation,
+      "arrivalLocation": widget.arrivalLocation,
+      "departDate": widget.departDate,
+      "departTime": widget.departTime,
+      "arriveDate": widget.arriveDate,
+      "arriveTime": widget.arriveTime,
+      "shippingLine": widget.shippingLine,
+      "selectedCardType": widget.selectedCardType,
+      "passengers": widget.passengers, // already formatted list of name/contact
+      "hasVehicle": widget.hasVehicle,
+      "vehicleDetail": widget.vehicleDetail,
+      "bookingReference": widget.bookingReference,
+      "totalFare": totalAmount,
+      "schedcde": widget.schedcde,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      return response.statusCode == 200;
+    } catch (err) {
+      print('Submit error: $err');
+
+      return false;
+    }
   }
 
   void generateFixedFares() {
@@ -116,7 +171,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ],
                 ),
                 ElevatedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    final success =
+                        await _submit(); // Wait for the API call to finish
+
+                    if (!success) return;
                     showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -248,26 +307,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                               arriveTime: widget.arriveTime,
                                               shippingLine: widget.shippingLine,
                                               hasVehicle: widget.hasVehicle,
+                                              bookingReference:
+                                                  widget.bookingReference,
                                               selectedCardType:
                                                   widget.selectedCardType,
-                                              vehicleDetails: widget.hasVehicle
-                                                  ? [
-                                                      {
-                                                        "plateNumber":
-                                                            TextEditingController(
-                                                                text: widget
-                                                                    .plateNumber),
-                                                        "carType":
-                                                            TextEditingController(
-                                                                text: widget
-                                                                    .carType),
-                                                        "vehicleOwner":
-                                                            TextEditingController(
-                                                                text: widget
-                                                                    .driverName),
-                                                      }
-                                                    ]
-                                                  : null,
+                                              vehicleDetail:
+                                                  widget.vehicleDetail,
                                             ),
                                           ),
                                         );
@@ -405,15 +450,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ],
                 );
               }),
-              if (widget.hasVehicle) ...[
+              if (widget.hasVehicle && widget.vehicleDetail.isNotEmpty) ...[
                 const Divider(height: 30),
                 const Text("🚗 Vehicle Details:",
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text("Driver Name: ${widget.driverName}"),
-                Text("Plate Number: ${widget.plateNumber}"),
-                Text("Car Type: ${widget.carType}"),
-                Text("Vehicle Fare: ₱${vehicleFare.toStringAsFixed(2)}"),
+                ...List.generate(widget.vehicleDetail.length, (i) {
+                  final vehicle = widget.vehicleDetail[i];
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Driver Name: ${vehicle["vehicleOwner"] ?? "-"}"),
+                      Text("Plate Number: ${vehicle["plateNumber"] ?? "-"}"),
+                      Text("Car Type: ${vehicle["carType"] ?? "-"}"),
+                      Text("Vehicle Fare: ₱${vehicleFare.toStringAsFixed(2)}"),
+                      const SizedBox(height: 10),
+                    ],
+                  );
+                }),
               ],
             ],
           ),

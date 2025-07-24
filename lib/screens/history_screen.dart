@@ -7,11 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-
 String getBaseUrl() {
-
-    return 'https://ecbarko.onrender.com'; 
+  return 'https://ecbarko.onrender.com';
+  // return 'http://localhost:3000'; // Change this to your actual base URL
 }
+
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -37,11 +37,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _loadCardHistory();
   }
 
-    Future<void> _loadCardHistory() async {
+  Future<void> _loadCardHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     final userId = prefs.getString('userID');
-   
+
     if (token != null && userId != null) {
       final response = await http.get(
         Uri.parse('${getBaseUrl()}/api/cardHistory/$userId'),
@@ -50,15 +50,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
           'Content-Type': 'application/json',
         },
       );
-    
+
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(response.body);
         setState(() {
           transactions = jsonList
-          .map((json) => Transaction.fromJson(json as Map<String, dynamic>))
-          .toList()
-          .reversed
-          .toList();
+              .map((json) => Transaction.fromJson(json as Map<String, dynamic>))
+              .toList()
+              .reversed
+              .toList();
         });
       } else {
         print('Failed to load card History data: ${response.statusCode}');
@@ -66,14 +66,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-
   Widget _buildTransactionItem(Transaction transaction) {
-
     final isLoad = transaction.type == 'Load';
     final title =
         isLoad ? 'Purchased EcBarko RFID Load' : 'Payment for EcBarko RFID';
     final amount = '₱${transaction.amount?.toStringAsFixed(2) ?? '0.00'}'
-    .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},');
+        .replaceAllMapped(
+            RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},');
 
     final status = transaction.status;
 
@@ -225,7 +224,4 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
   }
-
-
 }
-

@@ -6,10 +6,11 @@ import '../constants.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 
 class BookingDetailsScreen extends StatefulWidget {
+  final String schedcde;
   final String departureLocation;
-  final String departurePort;
+
   final String arrivalLocation;
-  final String arrivalPort;
+
   final String departDate;
   final String departTime;
   final String arriveDate;
@@ -18,10 +19,11 @@ class BookingDetailsScreen extends StatefulWidget {
 
   const BookingDetailsScreen({
     super.key,
+    required this.schedcde,
     required this.departureLocation,
-    required this.departurePort,
+
     required this.arrivalLocation,
-    required this.arrivalPort,
+
     required this.departDate,
     required this.departTime,
     required this.arriveDate,
@@ -225,8 +227,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey[600])),
                               SizedBox(height: 4.h),
-                              Text(widget.arriveDate,
-                                  style: TextStyle(fontSize: 15.sp)),
+                              // Text(widget.arriveDate,
+                              //     style: TextStyle(fontSize: 15.sp)),
                               Text(widget.arriveTime,
                                   style: TextStyle(fontSize: 15.sp)),
                             ],
@@ -1013,6 +1015,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => PaymentScreen(
+                                schedcde: widget.schedcde,
                                 departureLocation: widget.departureLocation,
                                 arrivalLocation: widget.arrivalLocation,
                                 departDate: widget.departDate,
@@ -1029,22 +1032,15 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                                         })
                                     .toList(),
                                 hasVehicle: hasVehicle,
-                                plateNumber: vehicleDetails.isNotEmpty
-                                    ? vehicleDetails.first['plateNumber']!.text
-                                    : "",
-                                carType: vehicleDetails.isNotEmpty
-                                    ? (vehicleDetails
-                                                .first['vehicleType']!.text ==
-                                            "Other (Not Listed)"
-                                        ? vehicleDetails
-                                            .first['customType']!.text
-                                        : vehicleDetails
-                                            .first['vehicleType']!.text)
-                                    : "",
-                                driverName: hasVehicle &&
-                                        vehicleDetails.isNotEmpty
-                                    ? "${vehicleDetails.first['driverFirstName']!.text} ${vehicleDetails.first['driverLastName']!.text}"
-                                    : "",
+                                vehicleDetail: hasVehicle && vehicleDetails.isNotEmpty
+                                          ? vehicleDetails.map((v) => {
+                                            "plateNumber": v["plateNumber"]!.text,
+                                            "carType": v["vehicleType"]!.text == "Other (Not Listed)"
+                                                ? v["customType"]!.text
+                                                : v["vehicleType"]!.text,
+                                            "vehicleOwner": "${v["driverFirstName"]!.text} ${v["driverLastName"]!.text}"
+                                          }).toList()
+                                        : [],
                               ),
                             ),
                           ).then((_) {

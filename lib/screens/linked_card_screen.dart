@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:EcBarko/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:math';
+
+String getBaseUrl() {
+  return 'https://ecbarko.onrender.com';
+  // return 'http://localhost:3000';
+}
 
 class LinkedCardScreen extends StatefulWidget {
   const LinkedCardScreen({super.key});
@@ -17,26 +25,41 @@ class _LinkedCardScreenState extends State<LinkedCardScreen> {
   Future<void> _saveCard() async {
     final cardNumber = cardNumberController.text.trim();
     final cardLabel = cardLabelController.text.trim();
-    
-    // Remove hyphens and check if we have exactly 12 digits
     final digitsOnly = cardNumber.replaceAll('-', '');
-    
+
     if (digitsOnly.length != 12) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Card number must contain exactly 12 digits.')),
+        const SnackBar(
+            content: Text('Card number must contain exactly 12 digits.')),
       );
       return;
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('linkedCardNumber', digitsOnly); // Store without hyphens
-    await prefs.setString('linkedCardLabel', cardLabel);
+    final user = prefs.getString('userID');
+    final url = Uri.parse('${getBaseUrl()}/api/card/$cardNumber');
+    final body = {
+      'userId': user, // Needed if your schema requires it
+    };
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Card saved successfully!')),
-    );
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
 
-    Navigator.pop(context);
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Card saved successfully!')),
+        );
+        Navigator.pop(context);
+      } else {
+        print('Failed to save card: ${response.body}');
+      }
+    } catch (err) {
+      print('Submit error: $err');
+    }
   }
 
   @override
@@ -80,7 +103,8 @@ class _LinkedCardScreenState extends State<LinkedCardScreen> {
                 children: [
                   Text(
                     'ECBARKO Card Number (last 12 digits)',
-                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+                    style:
+                        TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
                   ),
                   SizedBox(height: 8.h),
                   TextField(
@@ -119,7 +143,8 @@ class _LinkedCardScreenState extends State<LinkedCardScreen> {
                 children: [
                   Text(
                     'Card Label (optional)',
-                    style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+                    style:
+                        TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
                   ),
                   SizedBox(height: 8.h),
                   TextField(

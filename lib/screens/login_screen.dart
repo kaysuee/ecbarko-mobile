@@ -8,14 +8,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform; 
+import 'dart:io' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
 
 String getBaseUrl() {
-
-    return 'https://ecbarko.onrender.com';
-
+  return 'https://ecbarko.onrender.com';
+  // return 'http://localhost:3000';
 }
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
   @override
@@ -58,93 +58,88 @@ class _LoginScreenState extends State<LoginScreen>
     _controller.forward();
   }
 
-void submit() async {
-  HapticFeedback.lightImpact();
+  void submit() async {
+    HapticFeedback.lightImpact();
 
-  if (_formKey.currentState!.validate()) {
-    setState(() => _isLoading = true);
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
 
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
 
-    try {
-      final response = await http.post(
-        Uri.parse('${getBaseUrl()}/api/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
-   
+      try {
+        final response = await http.post(
+          Uri.parse('${getBaseUrl()}/api/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': email,
+            'password': password,
+          }),
+        );
 
-      final responseData = jsonDecode(response.body);
-     
-      if (response.statusCode == 200 && responseData['token'] != null) {
-        final token = responseData['token'];
-        final user = responseData['user'];
-        if(user['status'] == "inactive"){
-          sendOtp(emailController.text.trim());
-          Navigator.pushReplacementNamed(context, '/otp');
-          return;
+        final responseData = jsonDecode(response.body);
+
+        if (response.statusCode == 200 && responseData['token'] != null) {
+          final token = responseData['token'];
+          final user = responseData['user'];
+          if (user['status'] == "inactive") {
+            sendOtp(emailController.text.trim());
+            Navigator.pushReplacementNamed(context, '/otp');
+            return;
+          }
+          print("badingss $user");
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('isLoggedIn', true);
+          await prefs.setString('userID', user['userId']);
+          await prefs.setString('token', token);
+          await prefs.setString('email', user['email']);
+
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          final errorMsg = responseData['error'] ?? 'Login failed';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
-        print("badingss $user" );
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
-        await prefs.setString('userID', user['userId']);
-        await prefs.setString('token', token); 
-
-       
-
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        final errorMsg = responseData['error'] ?? 'Login failed';
+      } catch (e) {
+        print("bading $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMsg),
+            content: Text('An error occurred: $e'),
             backgroundColor: Colors.red,
           ),
         );
+      } finally {
+        setState(() => _isLoading = false);
       }
-    } catch (e) {
-        print("bading $e" );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('An error occurred: $e'),
-          backgroundColor: Colors.red,
+          content: const Text('Please enter valid credentials.'),
+          backgroundColor: Colors.red[400],
         ),
       );
-    } finally {
-      setState(() => _isLoading = false);
     }
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Please enter valid credentials.'),
-        backgroundColor: Colors.red[400],
-      ),
+  }
+
+  void sendOtp(String email) async {
+    final response = await http.post(
+      Uri.parse('${getBaseUrl()}/api/send-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
     );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['send'] == true) {
+      print("otp sent");
+    } else {
+      print("OTP sent Error. Please try again!");
+    }
   }
-}
-
-void sendOtp(String email) async {
-
-  final response = await http.post(
-    Uri.parse('${getBaseUrl()}/api/send-otp'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'email': email}),
-  );
-
-  final data = jsonDecode(response.body);
-
-  if (response.statusCode == 200 && data['send'] == true) {
-    print("otp sent");
-    
-  } else {
-
-    print("OTP sent Error. Please try again!");
-  }
-}
 
   // Uncomment this method if you want to use the dialog for success
   // void submit() {

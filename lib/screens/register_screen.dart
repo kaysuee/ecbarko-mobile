@@ -9,14 +9,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform; 
+import 'dart:io' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
 String getBaseUrl() {
-    return 'https://ecbarko.onrender.com';
-  }
-
+  return 'https://ecbarko.onrender.com';
+  // return 'http://localhost:3000';
+}
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -54,8 +54,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   int _start = 120; // 3 minutes
   Timer? _timer;
   final GlobalKey _passwordFieldKey = GlobalKey();
-final FocusNode _passwordFocusNode = FocusNode();
-bool _isPasswordFieldFocused = false;
+  final FocusNode _passwordFocusNode = FocusNode();
+  bool _isPasswordFieldFocused = false;
   OverlayEntry? _overlayEntry;
   bool _isTooltipVisible = false;
 
@@ -83,10 +83,10 @@ bool _isPasswordFieldFocused = false;
     _controller.forward();
 
     _passwordFocusNode.addListener(() {
-    setState(() {
-      _isPasswordFieldFocused = _passwordFocusNode.hasFocus;
+      setState(() {
+        _isPasswordFieldFocused = _passwordFocusNode.hasFocus;
+      });
     });
-  });
   }
 
   void _updatePasswordCriteria() {
@@ -249,30 +249,31 @@ bool _isPasswordFieldFocused = false;
     return null;
   }
 
-String? validatePassword(String? value) {
-  if (value == null || value.isEmpty) {
-    return 'Password is required';
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+
+    if (value.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+
+    final hasUppercase = value.contains(RegExp(r'[A-Z]'));
+    final hasLowercase = value.contains(RegExp(r'[a-z]'));
+    final hasDigit = value.contains(RegExp(r'\d'));
+    final hasSpecialChar =
+        value.contains(RegExp(r'[!@#\$&*~%^()_+\-=\[\]{}|\\:;"\<>,.?/]'));
+
+    if (!hasUppercase)
+      return 'Password must have at least one uppercase letter';
+    if (!hasLowercase)
+      return 'Password must have at least one lowercase letter';
+    if (!hasDigit) return 'Password must have at least one number';
+    if (!hasSpecialChar)
+      return 'Password must have at least one special character';
+
+    return null;
   }
-
-  if (value.length < 8) {
-    return 'Password must be at least 8 characters long';
-  }
-
-  final hasUppercase = value.contains(RegExp(r'[A-Z]'));
-  final hasLowercase = value.contains(RegExp(r'[a-z]'));
-  final hasDigit = value.contains(RegExp(r'\d'));
-  final hasSpecialChar = value.contains(RegExp(r'[!@#\$&*~%^()_+\-=\[\]{}|\\:;"\<>,.?/]'));
-
-
-
-  if (!hasUppercase) return 'Password must have at least one uppercase letter';
-  if (!hasLowercase) return 'Password must have at least one lowercase letter';
-  if (!hasDigit) return 'Password must have at least one number';
-  if (!hasSpecialChar) return 'Password must have at least one special character';
-
-  return null;
-}
-
 
   String? validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) return "Confirm your password";
@@ -425,21 +426,21 @@ String? validatePassword(String? value) {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               _buildInputField(
-                                              label: 'Email Address',
-                                              icon: Icons.email,
-                                              controller: usernameController,
-                                              keyboardType: TextInputType.emailAddress,
-                                              validator: validateEmail,
-                                              readOnly: _otp,
-                                              maxLength: 50,
-                                            ),
+                                                label: 'Email Address',
+                                                icon: Icons.email,
+                                                controller: usernameController,
+                                                keyboardType:
+                                                    TextInputType.emailAddress,
+                                                validator: validateEmail,
+                                                readOnly: _otp,
+                                                maxLength: 50,
+                                              ),
                                             ],
                                           ),
                                         ),
-                                      
                                       ],
                                     ),
-                                   
+
                                     SizedBox(
                                         height: ScreenUtil().setHeight(10)),
                                     // Mobile
@@ -473,22 +474,36 @@ String? validatePassword(String? value) {
                                       ),
                                     ),
                                     if (_isPasswordFieldFocused)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: const [
-                                          Text('• Must have at least one uppercase letter',
-                                              style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                          Text('• Must have at least one lowercase letter',
-                                              style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                          Text('• Must have at least one number',
-                                              style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                          Text('• Must have at least one special character',
-                                              style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                        ],
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(top: 8.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: const [
+                                            Text(
+                                                '• Must have at least one uppercase letter',
+                                                style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12)),
+                                            Text(
+                                                '• Must have at least one lowercase letter',
+                                                style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12)),
+                                            Text(
+                                                '• Must have at least one number',
+                                                style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12)),
+                                            Text(
+                                                '• Must have at least one special character',
+                                                style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12)),
+                                          ],
+                                        ),
                                       ),
-                                    ),
                                     SizedBox(
                                         height: ScreenUtil().setHeight(10)),
                                     // Confirm Password
@@ -504,8 +519,9 @@ String? validatePassword(String? value) {
                                             ? Icons.visibility_off
                                             : Icons.visibility),
                                         onPressed: () {
-                                          setState(() => _obscureConfirmPassword =
-                                              !_obscureConfirmPassword);
+                                          setState(() =>
+                                              _obscureConfirmPassword =
+                                                  !_obscureConfirmPassword);
                                         },
                                       ),
                                     ),
@@ -607,13 +623,13 @@ String? validatePassword(String? value) {
     TextInputType keyboardType = TextInputType.text,
     required int maxLength,
     bool readOnly = false,
-     FocusNode? focusNode,
+    FocusNode? focusNode,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
-       focusNode: focusNode,
+      focusNode: focusNode,
       style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w400,
@@ -641,90 +657,105 @@ String? validatePassword(String? value) {
         ),
       ),
       validator: validator,
-      readOnly: readOnly
-,
+      readOnly: readOnly,
     );
   }
 
-  
-void _submit() async {
-  if (!_isAccepted) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Agreement Required", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("Please read and accept the terms and conditions to continue."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showTermsAndConditions(confirmBeforeAccept: true);
-            },
-            child: const Text("Read Terms"),
-          ),
-        ],
-      ),
-    );
-    return;
-  }
-
-  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-  if (!emailRegex.hasMatch(usernameController.text)) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-      content: Text('Please enter a valid email address.'),
-      backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-
- 
-
-  if (_formKey.currentState!.validate()) {
-    final url =  Uri.parse('${getBaseUrl()}/api/register'); 
-    final body = {
-      'first_name': firstnameController.text.trim(),
-      'last_name': lastnameController.text.trim(),
-      'email': usernameController.text.trim(),
-      'phone': mobilenumController.text.trim(),
-      'password': passwordController.text.trim(),
-    };
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
+  void _submit() async {
+    if (!_isAccepted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Agreement Required",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          content: const Text(
+              "Please read and accept the terms and conditions to continue."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showTermsAndConditions(confirmBeforeAccept: true);
+              },
+              child: const Text("Read Terms"),
+            ),
+          ],
+        ),
       );
+      return;
+    }
 
-      if (response.statusCode == 200) {
-        final result = jsonDecode(response.body);
-         sendOtp(usernameController.text.trim());
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Success", style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text("Registration successful!"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/otp');
-                },
-                child: const Text("OK"),
-              ),
-            ],
-          ),
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    if (!emailRegex.hasMatch(usernameController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter a valid email address.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_formKey.currentState!.validate()) {
+      final url = Uri.parse('${getBaseUrl()}/api/register');
+      final body = {
+        'first_name': firstnameController.text.trim(),
+        'last_name': lastnameController.text.trim(),
+        'email': usernameController.text.trim(),
+        'phone': mobilenumController.text.trim(),
+        'password': passwordController.text.trim(),
+      };
+
+      try {
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
         );
-      } else {
-        final result = jsonDecode(response.body);
+
+        if (response.statusCode == 200) {
+          final result = jsonDecode(response.body);
+          sendOtp(usernameController.text.trim());
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Success",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              content: const Text("Registration successful!"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(context, '/otp');
+                  },
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        } else {
+          final result = jsonDecode(response.body);
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Registration Failed",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              content: Text(result['message'] ?? 'An error occurred.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (e) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Registration Failed", style: TextStyle(fontWeight: FontWeight.bold)),
-            content: Text(result['message'] ?? 'An error occurred.'),
+            title: const Text("Network Error",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            content: Text("Could not connect to server: $e"),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -734,12 +765,13 @@ void _submit() async {
           ),
         );
       }
-    } catch (e) {
+    } else {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text("Network Error", style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text("Could not connect to server: $e"),
+          title: const Text("Error",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          content: const Text("All fields are required to continue."),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -749,42 +781,23 @@ void _submit() async {
         ),
       );
     }
-  } else {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Error", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("All fields are required to continue."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
+  }
+
+  void sendOtp(String email) async {
+    final response = await http.post(
+      Uri.parse('${getBaseUrl()}/api/send-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
     );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 && data['send'] == true) {
+      print("otp sent");
+    } else {
+      print("OTP sent Error. Please try again!");
+    }
   }
-}
-
-void sendOtp(String email) async {
-
-  final response = await http.post(
-    Uri.parse('${getBaseUrl()}/api/send-otp'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'email': email}),
-  );
-
-  final data = jsonDecode(response.body);
-
-  if (response.statusCode == 200 && data['send'] == true) {
-    print("otp sent");
-    
-  } else {
-
-    print("OTP sent Error. Please try again!");
-  }
-}
-
 
   void _showTermsAndConditions({bool confirmBeforeAccept = false}) {
     showDialog(

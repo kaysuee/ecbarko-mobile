@@ -10,9 +10,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart'; // Ensure this includes your color constants like Ec_DARK_PRIMARY
 import 'package:http/http.dart' as http;
 import 'dart:convert';
- String getBaseUrl() {
-    return 'https://ecbarko.onrender.com';
-  }
+
+String getBaseUrl() {
+  return 'https://ecbarko.onrender.com';
+  // return 'http://localhost:3000';
+}
 
 class OTPScreen extends StatefulWidget {
   const OTPScreen({super.key});
@@ -21,7 +23,8 @@ class OTPScreen extends StatefulWidget {
   _OTPScreenState createState() => _OTPScreenState();
 }
 
-class _OTPScreenState extends State<OTPScreen> with SingleTickerProviderStateMixin {
+class _OTPScreenState extends State<OTPScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final otpController = TextEditingController();
 
@@ -42,7 +45,6 @@ class _OTPScreenState extends State<OTPScreen> with SingleTickerProviderStateMix
     _controller.forward();
   }
 
-
   Future<void> verifyOtp() async {
     final otp = otpController.text.trim();
 
@@ -60,22 +62,23 @@ class _OTPScreenState extends State<OTPScreen> with SingleTickerProviderStateMix
     final data = jsonDecode(response.body);
 
     if (response.statusCode == 200 && data['verified'] == true) {
-       showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Success", style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text("OTP Verified!"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Success",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          content: const Text("OTP Verified!"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
       // Proceed to next screen or reset password
     } else {
       showSnackbar('Invalid OTP', Colors.red);
@@ -102,9 +105,10 @@ class _OTPScreenState extends State<OTPScreen> with SingleTickerProviderStateMix
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
-                 Navigator.pushReplacementNamed(context, '/login');
+                Navigator.pushReplacementNamed(context, '/login');
               },
-            ),title: const Text(
+            ),
+            title: const Text(
               'OTP Verification',
               style: TextStyle(
                 color: Colors.white,
@@ -120,7 +124,7 @@ class _OTPScreenState extends State<OTPScreen> with SingleTickerProviderStateMix
           ),
         ),
       ),
-     body: Padding(
+      body: Padding(
         padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
@@ -128,7 +132,8 @@ class _OTPScreenState extends State<OTPScreen> with SingleTickerProviderStateMix
             children: [
               TextFormField(
                 controller: otpController,
-                style: TextStyle( // <== Put style here
+                style: TextStyle(
+                  // <== Put style here
                   fontSize: 16.sp,
                   color: Colors.white,
                 ),
@@ -150,7 +155,6 @@ class _OTPScreenState extends State<OTPScreen> with SingleTickerProviderStateMix
           ),
         ),
       ),
-
     );
   }
 }

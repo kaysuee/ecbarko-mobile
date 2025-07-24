@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ScheduleCard extends StatelessWidget {
+  final String schedcde;
   final String departureLocation;
-  final String departurePort;
   final String arrivalLocation;
-  final String arrivalPort;
   final String departDate;
   final String departTime;
   final String arriveDate;
@@ -18,10 +17,9 @@ class ScheduleCard extends StatelessWidget {
 
   const ScheduleCard({
     super.key,
+    required this.schedcde,
     required this.departureLocation,
-    required this.departurePort,
     required this.arrivalLocation,
-    required this.arrivalPort,
     required this.departDate,
     required this.departTime,
     required this.arriveDate,
@@ -46,7 +44,7 @@ class ScheduleCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🔵 LOCATIONS
+              //🔵 LOCATIONS
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -58,9 +56,9 @@ class ScheduleCard extends StatelessWidget {
                               fontSize: 18.sp,
                               fontWeight: FontWeight.bold,
                               color: Ec_PRIMARY)),
-                      Text(departurePort,
-                          style:
-                              TextStyle(fontSize: 14.sp, color: Colors.black)),
+                      // Text(departurePort,
+                      //     style:
+                      //         TextStyle(fontSize: 14.sp, color: Colors.black)),
                     ],
                   ),
                   Column(
@@ -71,9 +69,9 @@ class ScheduleCard extends StatelessWidget {
                               fontSize: 18.sp,
                               fontWeight: FontWeight.bold,
                               color: Ec_PRIMARY)),
-                      Text(arrivalPort,
-                          style:
-                              TextStyle(fontSize: 14.sp, color: Colors.black)),
+                      // Text(arrivalPort,
+                      //     style:
+                      //         TextStyle(fontSize: 14.sp, color: Colors.black)),
                     ],
                   ),
                 ],
@@ -215,10 +213,9 @@ class ScheduleCard extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => BookingDetailsScreen(
+                      schedcde: schedcde,
                       departureLocation: departureLocation,
-                      departurePort: departurePort,
                       arrivalLocation: arrivalLocation,
-                      arrivalPort: arrivalPort,
                       departDate: departDate,
                       departTime: departTime,
                       arriveDate: arriveDate,

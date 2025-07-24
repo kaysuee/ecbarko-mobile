@@ -12,6 +12,7 @@ import 'dart:async';
 
 String getBaseUrl() {
   return 'https://ecbarko.onrender.com';
+  // return 'http://localhost:3000'; // Change this to your actual base URL
 }
 
 class BookingScreen extends StatefulWidget {
@@ -33,138 +34,7 @@ class _BookingScreenState extends State<BookingScreen>
   List<BookingModel> activeBookings = [];
   Timer? _bookingCheckTimer;
 
-  final List<Schedule> allSchedules = [
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Marinduque',
-      arrivalPort: 'Balanacan Port',
-      departDate: 'Jun 10 Mon',
-      departTime: '03:30 AM',
-      arriveDate: 'Jun 10 Mon',
-      arriveTime: '06:30 AM',
-      shippingLine: 'STARHORSE Shipping Lines',
-      passengerSlotsLeft: 32,
-      vehicleSlotsLeft: 8,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Banton',
-      arrivalPort: 'Banton Port',
-      departDate: 'Jun 10 Mon',
-      departTime: '05:30 AM',
-      arriveDate: 'Jun 10 Mon',
-      arriveTime: '11:30 AM',
-      shippingLine: 'STARHORSE Shipping Lines',
-      passengerSlotsLeft: 18,
-      vehicleSlotsLeft: 5,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Masbate',
-      arrivalPort: 'Masbate Port',
-      departDate: 'Jun 11 Tue',
-      departTime: '04:00 AM',
-      arriveDate: 'Jun 11 Tue',
-      arriveTime: '01:30 PM',
-      shippingLine: 'Montenegro Shipping Lines',
-      passengerSlotsLeft: 45,
-      vehicleSlotsLeft: 12,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Marinduque',
-      arrivalPort: 'Santa Cruz Port',
-      departDate: 'Jun 11 Tue',
-      departTime: '02:00 AM',
-      arriveDate: 'Jun 11 Tue',
-      arriveTime: '05:00 AM',
-      shippingLine: 'Montenegro Shipping Lines',
-      passengerSlotsLeft: 26,
-      vehicleSlotsLeft: 7,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Banton',
-      arrivalPort: 'Banton Port',
-      departDate: 'Jun 12 Wed',
-      departTime: '03:00 AM',
-      arriveDate: 'Jun 12 Wed',
-      arriveTime: '10:00 AM',
-      shippingLine: 'STARHORSE Shipping Lines',
-      passengerSlotsLeft: 15,
-      vehicleSlotsLeft: 3,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Masbate',
-      arrivalPort: 'Masbate Port',
-      departDate: 'Jun 12 Wed',
-      departTime: '04:00 AM',
-      arriveDate: 'Jun 12 Wed',
-      arriveTime: '12:00 PM',
-      shippingLine: 'STARHORSE Shipping Lines',
-      passengerSlotsLeft: 39,
-      vehicleSlotsLeft: 10,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Marinduque',
-      arrivalPort: 'Balanacan Port',
-      departDate: 'Jun 13 Thu',
-      departTime: '01:30 AM',
-      arriveDate: 'Jun 13 Thu',
-      arriveTime: '04:30 AM',
-      shippingLine: 'Montenegro Shipping Lines',
-      passengerSlotsLeft: 29,
-      vehicleSlotsLeft: 6,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Banton',
-      arrivalPort: 'Banton Port',
-      departDate: 'Jun 14 Fri',
-      departTime: '05:30 AM',
-      arriveDate: 'Jun 14 Fri',
-      arriveTime: '11:30 AM',
-      shippingLine: 'STARHORSE Shipping Lines',
-      passengerSlotsLeft: 22,
-      vehicleSlotsLeft: 4,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Masbate',
-      arrivalPort: 'Masbate Port',
-      departDate: 'Jun 15 Sat',
-      departTime: '04:00 AM',
-      arriveDate: 'Jun 15 Sat',
-      arriveTime: '01:30 PM',
-      shippingLine: 'Montenegro Shipping Lines',
-      passengerSlotsLeft: 35,
-      vehicleSlotsLeft: 9,
-    ),
-    const Schedule(
-      departureLocation: 'Lucena',
-      departurePort: 'Dalahican Port',
-      arrivalLocation: 'Marinduque',
-      arrivalPort: 'Santa Cruz Port',
-      departDate: 'Jun 16 Sun',
-      departTime: '02:00 AM',
-      arriveDate: 'Jun 16 Sun',
-      arriveTime: '05:00 AM',
-      shippingLine: 'STARHORSE Shipping Lines',
-      passengerSlotsLeft: 28,
-      vehicleSlotsLeft: 7,
-    ),
-  ];
+  List<Schedule> allSchedules = [];
 
   List<Schedule> displayedSchedules = [];
   DateTime? selectedDate;
@@ -174,12 +44,13 @@ class _BookingScreenState extends State<BookingScreen>
     super.initState();
     _tabController =
         TabController(length: 2, vsync: this, initialIndex: widget.initialTab);
-    displayedSchedules = List.from(allSchedules);
-    _loadActiveBooking();
 
+    _loadActiveBooking();
+    _loadBooking();
     // Set up periodic check for booking statuses (every 5 minutes)
-    _bookingCheckTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+    _bookingCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _loadActiveBooking();
+      _loadBooking();
     });
   }
 
@@ -188,6 +59,36 @@ class _BookingScreenState extends State<BookingScreen>
     _bookingCheckTimer?.cancel();
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadBooking() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    final response = await http.get(
+      Uri.parse('${getBaseUrl()}/api/schedule'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = jsonDecode(response.body);
+
+      final List<Schedule> updatedSchedule = [];
+
+      for (var json in jsonList) {
+        final schedule = Schedule.fromJson(json as Map<String, dynamic>);
+
+        updatedSchedule.add(schedule);
+      }
+
+      setState(() {
+        allSchedules = updatedSchedule;
+        displayedSchedules = updatedSchedule;
+      });
+    }
   }
 
   Future<void> _loadActiveBooking() async {
@@ -214,7 +115,7 @@ class _BookingScreenState extends State<BookingScreen>
           final booking = BookingModel.fromJson(json as Map<String, dynamic>);
 
           // Parse departure date and time
-          final departDate = DateFormat('MMM dd EEE').parse(booking.departDate);
+          final departDate = DateTime.parse(booking.departDate);
           final departTime = DateFormat('hh:mm a').parse(booking.departTime);
 
           // Combine date and time
@@ -580,10 +481,8 @@ class _BookingScreenState extends State<BookingScreen>
     setState(() {
       displayedSchedules = allSchedules.where((schedule) {
         final destination = schedule.arrivalLocation.toLowerCase();
-        final port = schedule.arrivalPort.toLowerCase();
         final shippingLine = schedule.shippingLine.toLowerCase();
         return destination.contains(query.toLowerCase()) ||
-            port.contains(query.toLowerCase()) ||
             shippingLine.contains(query.toLowerCase());
       }).toList();
     });
@@ -870,17 +769,18 @@ class _BookingScreenState extends State<BookingScreen>
                       return Padding(
                         padding: EdgeInsets.only(bottom: 15.h),
                         child: ScheduleCard(
+                          schedcde: schedule.scheduleId,
                           departureLocation: schedule.departureLocation,
-                          departurePort: schedule.departurePort,
                           arrivalLocation: schedule.arrivalLocation,
-                          arrivalPort: schedule.arrivalPort,
                           departDate: schedule.departDate,
                           departTime: schedule.departTime,
                           arriveDate: schedule.arriveDate,
                           arriveTime: schedule.arriveTime,
                           shippingLine: schedule.shippingLine,
-                          passengerSlotsLeft: schedule.passengerSlotsLeft,
-                          vehicleSlotsLeft: schedule.vehicleSlotsLeft,
+                          passengerSlotsLeft: schedule.passengerCapacity -
+                              schedule.passengerBooked,
+                          vehicleSlotsLeft:
+                              schedule.vehicleCapacity - schedule.vehicleBooked,
                         ),
                       );
                     },

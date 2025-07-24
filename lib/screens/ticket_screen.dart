@@ -17,7 +17,7 @@ class TicketScreen extends StatelessWidget {
   final String selectedCardType;
   final List<Map<String, String>> passengers;
   final bool hasVehicle;
-  final List<Map<String, TextEditingController>>? vehicleDetails;
+  final List<Map<String, String>> vehicleDetail;
   final String bookingReference;
 
   TicketScreen({
@@ -32,15 +32,9 @@ class TicketScreen extends StatelessWidget {
     required this.selectedCardType,
     required this.passengers,
     this.hasVehicle = false,
-    this.vehicleDetails,
-  })  : bookingReference = _generateReference(), // 👈 generate once
-        super(key: key);
-  static String _generateReference() {
-    final random = Random();
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return List.generate(8, (index) => chars[random.nextInt(chars.length)])
-        .join();
-  }
+    required this.vehicleDetail,
+    required this.bookingReference,
+  }) : super(key: key);
 
   Future<void> _generatePdf(BuildContext context) async {
     final pdf = pw.Document();
@@ -106,13 +100,13 @@ class TicketScreen extends StatelessWidget {
                       text: "${p["name"]} (Contact: ${p["contact"]})",
                       bulletColor: PdfColors.indigo,
                     )),
-                if (hasVehicle && vehicleDetails != null) ...[
+                if (hasVehicle && vehicleDetail != null) ...[
                   pw.SizedBox(height: 12),
                   pw.Text("Vehicle Information",
                       style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold, fontSize: 16)),
                   pw.SizedBox(height: 4),
-                  ...vehicleDetails!.asMap().entries.map((entry) {
+                  ...vehicleDetail!.asMap().entries.map((entry) {
                     final i = entry.key;
                     final vehicle = entry.value;
                     return pw.Container(
@@ -129,15 +123,15 @@ class TicketScreen extends StatelessWidget {
                           pw.Text("Vehicle ${i + 1}",
                               style:
                                   pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          if (vehicle['vehicleOwner']?.text != null &&
-                              vehicle['vehicleOwner']!.text.isNotEmpty)
+                          if (vehicle['vehicleOwner'] != null &&
+                              vehicle['vehicleOwner']!.isNotEmpty)
                             pw.Text(
-                              "Driver: ${vehicle['vehicleOwner']!.text}",
+                              "Driver: ${vehicle['vehicleOwner']}",
                               style: pw.TextStyle(fontSize: 14.sp),
                             ),
                           pw.Text(
-                              "Plate: ${vehicle['plateNumber']?.text ?? ""}"),
-                          pw.Text("Type: ${vehicle['carType']?.text ?? ""}"),
+                              "Plate: ${vehicle['plateNumber'] ?? ""}"),
+                          pw.Text("Type: ${vehicle['carType'] ?? ""}"),
                         ],
                       ),
                     );
@@ -235,11 +229,7 @@ class TicketScreen extends StatelessWidget {
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context); // Close dialog
-                        Navigator.pushNamedAndRemoveUntil(
-                          context,
-                          '/dashboard',
-                          (route) => false,
-                        );
+                        Navigator.pushReplacementNamed(context, '/home');
                       },
                       child: const Text('Go to Dashboard'),
                     ),
@@ -331,13 +321,13 @@ class TicketScreen extends StatelessWidget {
                       subtitle: Text("Contact: ${p["contact"] ?? ""}"),
                     ),
                   )),
-              if (hasVehicle && vehicleDetails != null) ...[
+              if (hasVehicle && vehicleDetail != null) ...[
                 const SizedBox(height: 20),
                 const Text("Vehicle Information",
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                ...vehicleDetails!.asMap().entries.map((entry) {
+                ...vehicleDetail!.asMap().entries.map((entry) {
                   final i = entry.key;
                   final vehicle = entry.value;
                   return Card(
@@ -352,9 +342,9 @@ class TicketScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                              "Driver: ${vehicle["vehicleOwner"]?.text ?? ""}"),
-                          Text("Plate: ${vehicle["plateNumber"]?.text ?? ""}"),
-                          Text("Type: ${vehicle["carType"]?.text ?? ""}"),
+                              "Driver: ${vehicle["vehicleOwner"] ?? ""}"),
+                          Text("Plate: ${vehicle["plateNumber"] ?? ""}"),
+                          Text("Type: ${vehicle["carType"] ?? ""}"),
                         ],
                       ),
                     ),
