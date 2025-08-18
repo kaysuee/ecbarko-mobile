@@ -1,5 +1,8 @@
 // ok na pero walang bi eye slash
 
+import 'package:EcBarko/screens/terms_screen.dart';
+import 'package:flutter/gestures.dart';
+
 import '../constants.dart';
 import '../widgets/customfont.dart';
 import '../widgets/custom_inkwell_button.dart';
@@ -14,7 +17,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com';
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 
@@ -537,24 +541,72 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           },
                                         ),
                                         Expanded(
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              _showTermsAndConditions();
-                                            },
-                                            child: Text(
-                                              'I accept all the terms and conditions',
-                                              style: TextStyle(
-                                                color: Colors.black,
-                                                fontSize:
-                                                    ScreenUtil().setSp(15),
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
+                                          child: RichText(
+                                            text: TextSpan(
+                                              children: [
+                                                const TextSpan(
+                                                  text: 'I accept all the ',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                TextSpan(
+                                                  text: 'terms and conditions',
+                                                  style: const TextStyle(
+                                                    color: Ec_DARK_PRIMARY,
+                                                    fontSize: 15,
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                  ),
+                                                  recognizer:
+                                                      TapGestureRecognizer()
+                                                        ..onTap = () {
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                                builder: (_) =>
+                                                                    const TermsScreen()),
+                                                          );
+                                                        },
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
+
+                                    // // Checkbox Acceptance
+                                    // Row(
+                                    //   children: [
+                                    //     Checkbox(
+                                    //       value: _isAccepted,
+                                    //       onChanged: (bool? value) {
+                                    //         setState(() {
+                                    //           _isAccepted = value ?? false;
+                                    //         });
+                                    //       },
+                                    //     ),
+                                    //     Expanded(
+                                    //       child: GestureDetector(
+                                    //         onTap: () {
+                                    //           _showTermsAndConditions();
+                                    //         },
+                                    //         child: Text(
+                                    //           'I accept all the terms and conditions',
+                                    //           style: TextStyle(
+                                    //             color: Colors.black,
+                                    //             fontSize:
+                                    //                 ScreenUtil().setSp(15),
+                                    //             decoration:
+                                    //                 TextDecoration.underline,
+                                    //           ),
+                                    //         ),
+                                    //       ),
+                                    //     ),
+                                    //   ],
+                                    // ),
                                     SizedBox(
                                         height: ScreenUtil().setHeight(10)),
                                     // Submit Button

@@ -18,7 +18,8 @@ import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com'; // iOS or desktop
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 

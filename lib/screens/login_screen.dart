@@ -12,7 +12,8 @@ import 'dart:io' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com';
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 
