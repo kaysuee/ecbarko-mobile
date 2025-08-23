@@ -11,7 +11,8 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com';
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000'; // Change this to your actual base URL
 }
 
@@ -731,7 +732,8 @@ class _BookingScreenState extends State<BookingScreen>
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30.r),
-                      borderSide: BorderSide(color: Ec_PRIMARY, width: 1.0),
+                      borderSide:
+                          const BorderSide(color: Ec_PRIMARY, width: 1.0),
                     ),
                   ),
                 ),

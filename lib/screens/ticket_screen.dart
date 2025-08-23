@@ -20,7 +20,7 @@ class TicketScreen extends StatelessWidget {
   final List<Map<String, String>> vehicleDetail;
   final String bookingReference;
 
-  TicketScreen({
+  const TicketScreen({
     Key? key,
     required this.departureLocation,
     required this.arrivalLocation,
@@ -100,13 +100,13 @@ class TicketScreen extends StatelessWidget {
                       text: "${p["name"]} (Contact: ${p["contact"]})",
                       bulletColor: PdfColors.indigo,
                     )),
-                if (hasVehicle && vehicleDetail != null) ...[
+                if (hasVehicle) ...[
                   pw.SizedBox(height: 12),
                   pw.Text("Vehicle Information",
                       style: pw.TextStyle(
                           fontWeight: pw.FontWeight.bold, fontSize: 16)),
                   pw.SizedBox(height: 4),
-                  ...vehicleDetail!.asMap().entries.map((entry) {
+                  ...vehicleDetail.asMap().entries.map((entry) {
                     final i = entry.key;
                     final vehicle = entry.value;
                     return pw.Container(
@@ -129,8 +129,7 @@ class TicketScreen extends StatelessWidget {
                               "Driver: ${vehicle['vehicleOwner']}",
                               style: pw.TextStyle(fontSize: 14.sp),
                             ),
-                          pw.Text(
-                              "Plate: ${vehicle['plateNumber'] ?? ""}"),
+                          pw.Text("Plate: ${vehicle['plateNumber'] ?? ""}"),
                           pw.Text("Type: ${vehicle['carType'] ?? ""}"),
                         ],
                       ),
@@ -253,8 +252,8 @@ class TicketScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              const BoxShadow(
+            boxShadow: const [
+              BoxShadow(
                   color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
             ],
           ),
@@ -321,13 +320,13 @@ class TicketScreen extends StatelessWidget {
                       subtitle: Text("Contact: ${p["contact"] ?? ""}"),
                     ),
                   )),
-              if (hasVehicle && vehicleDetail != null) ...[
+              if (hasVehicle) ...[
                 const SizedBox(height: 20),
                 const Text("Vehicle Information",
                     style:
                         TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                ...vehicleDetail!.asMap().entries.map((entry) {
+                ...vehicleDetail.asMap().entries.map((entry) {
                   final i = entry.key;
                   final vehicle = entry.value;
                   return Card(
@@ -341,8 +340,7 @@ class TicketScreen extends StatelessWidget {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                              "Driver: ${vehicle["vehicleOwner"] ?? ""}"),
+                          Text("Driver: ${vehicle["vehicleOwner"] ?? ""}"),
                           Text("Plate: ${vehicle["plateNumber"] ?? ""}"),
                           Text("Type: ${vehicle["carType"] ?? ""}"),
                         ],

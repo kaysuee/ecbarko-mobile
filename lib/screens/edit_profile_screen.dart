@@ -11,7 +11,8 @@ import 'dart:io';
 Map<String, dynamic>? userData;
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com';
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 
@@ -334,7 +335,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // ✅ NEW: Display Name Text Below Image
                   Text(
                     userData?['name'] ?? 'Loading...',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   // const SizedBox(height: 10),
                   Chip(

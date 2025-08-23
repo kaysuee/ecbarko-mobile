@@ -222,7 +222,7 @@ class BookingDetailsViewScreen extends StatelessWidget {
               Container(
                 width: 12.w,
                 height: 12.w,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: Ec_PRIMARY,
                 ),
@@ -265,7 +265,7 @@ class BookingDetailsViewScreen extends StatelessWidget {
               Container(
                 width: 12.w,
                 height: 12.w,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: Ec_PRIMARY,
                 ),
@@ -352,7 +352,7 @@ class BookingDetailsViewScreen extends StatelessWidget {
           SizedBox(height: 16.h),
           ListView.separated(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: booking.passengerDetails.length,
             separatorBuilder: (context, index) => Divider(height: 16.h),
             itemBuilder: (context, index) {
@@ -434,7 +434,7 @@ class BookingDetailsViewScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (booking.vehicleInfo != null && booking.vehicleInfo!.owner != null)
+                    if (booking.vehicleInfo != null)
                       Text(
                         'Driver: ${booking.vehicleInfo!.owner}',
                         style: TextStyle(
@@ -731,19 +731,19 @@ class BookingDetailsViewScreen extends StatelessWidget {
               ),
               SizedBox(height: 20.h),
               ListTile(
-                leading: Icon(Icons.edit, color: Ec_PRIMARY),
-                title: Text('Modify Booking'),
-                subtitle: Text('Change date, time, or passengers'),
+                leading: const Icon(Icons.edit, color: Ec_PRIMARY),
+                title: const Text('Modify Booking'),
+                subtitle: const Text('Change date, time, or passengers'),
                 onTap: () {
                   Navigator.pop(context);
                   // Navigate to modify booking screen
                 },
               ),
               ListTile(
-                leading: Icon(Icons.cancel, color: Colors.red),
-                title:
-                    Text('Cancel Booking', style: TextStyle(color: Colors.red)),
-                subtitle: Text('Cancel and get refund'),
+                leading: const Icon(Icons.cancel, color: Colors.red),
+                title: const Text('Cancel Booking',
+                    style: TextStyle(color: Colors.red)),
+                subtitle: const Text('Cancel and get refund'),
                 onTap: () {
                   Navigator.pop(context);
                   _showCancelConfirmation(context);
@@ -781,7 +781,7 @@ class BookingDetailsViewScreen extends StatelessWidget {
                 ),
               );
             },
-            child: Text('Yes', style: TextStyle(color: Colors.red)),
+            child: const Text('Yes', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

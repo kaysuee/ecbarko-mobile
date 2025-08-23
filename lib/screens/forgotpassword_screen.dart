@@ -4,10 +4,11 @@ import '../constants.dart'; // Ensure this includes your color constants like Ec
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-
 String getBaseUrl() {
-    return 'https://ecbarko.onrender.com'; // Web
-  
+  // return 'https://ecbarko.onrender.com'; // Web
+
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
 }
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -38,28 +39,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     _controller.forward();
   }
 
-void _sendResetLink() async {
-  if (_formKey.currentState!.validate()) {
-    final response = await http.post(
-      Uri.parse('${getBaseUrl()}/api/send-reset'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': emailController.text}),
-    );
+  void _sendResetLink() async {
+    if (_formKey.currentState!.validate()) {
+      final response = await http.post(
+        Uri.parse('${getBaseUrl()}/api/send-reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': emailController.text}),
+      );
 
-    final data = jsonDecode(response.body);
-    if (response.statusCode == 200 && data['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reset link sent! Please check your email.'),
-        backgroundColor: Colors.green,),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? 'Failed to send reset link.'),
-        backgroundColor: Colors.red,),
-      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reset link sent! Please check your email.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data['message'] ?? 'Failed to send reset link.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
-}
 
   @override
   void dispose() {
@@ -82,7 +87,7 @@ void _sendResetLink() async {
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
-                 Navigator.pushReplacementNamed(context, '/login');
+                Navigator.pushReplacementNamed(context, '/login');
               },
             ),
             title: const Text(

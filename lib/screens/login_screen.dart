@@ -12,7 +12,8 @@ import 'dart:io' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com';
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 
@@ -254,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen>
       keyboardType: keyboardType,
       onTap: onTap,
       validator: validator,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: Colors.black87,
@@ -277,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.blueAccent),
+          borderSide: const BorderSide(color: Colors.blueAccent),
         ),
       ),
     );
@@ -419,7 +420,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       validator: validateEmail,
                                       keyboardType: TextInputType.emailAddress,
                                     ),
-                                    SizedBox(height: 20),
+                                    const SizedBox(height: 20),
                                     // Password Input
                                     _buildInputField(
                                       label: 'Password',
@@ -438,7 +439,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       ),
                                     ),
 
-                                    SizedBox(height: 10),
+                                    const SizedBox(height: 10),
                                     // Forgot Password
                                     Align(
                                       alignment: Alignment.centerRight,
@@ -460,7 +461,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         ),
                                       ),
                                     ),
-                                    SizedBox(height: 20),
+                                    const SizedBox(height: 20),
                                     // Login Button
                                     CustomInkwellButton(
                                       onTap: _isLoading ? null : submit,

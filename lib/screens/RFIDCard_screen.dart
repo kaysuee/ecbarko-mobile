@@ -9,8 +9,6 @@ import '../models/transaction_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
 
 String formatCard(String cardNumber) {
   if (cardNumber.length != 12) return cardNumber;
@@ -18,7 +16,8 @@ String formatCard(String cardNumber) {
 }
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com';
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 

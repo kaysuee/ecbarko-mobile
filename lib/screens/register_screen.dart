@@ -14,7 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com';
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 
@@ -47,11 +48,11 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _hasSpecialChar = false;
   bool _hasMinLength = false;
   bool _isAccepted = false;
-  bool _otp = false;
+  final bool _otp = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _isButtonDisabled = false;
-  int _start = 120; // 3 minutes
+  final bool _isButtonDisabled = false;
+  final int _start = 120; // 3 minutes
   Timer? _timer;
   final GlobalKey _passwordFieldKey = GlobalKey();
   final FocusNode _passwordFocusNode = FocusNode();
@@ -176,7 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         ),
       ),
     );
-    Overlay.of(context)!.insert(_overlayEntry!);
+    Overlay.of(context).insert(_overlayEntry!);
     _isTooltipVisible = true;
   }
 
@@ -244,8 +245,9 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   String? validateMobile(String? value) {
     if (value == null || value.isEmpty) return "Mobile number is required";
-    if (!RegExp(r'^[0-9]{11}$').hasMatch(value))
+    if (!RegExp(r'^[0-9]{11}$').hasMatch(value)) {
       return "Enter a valid 11-digit mobile number";
+    }
     return null;
   }
 
@@ -264,13 +266,16 @@ class _RegisterScreenState extends State<RegisterScreen>
     final hasSpecialChar =
         value.contains(RegExp(r'[!@#\$&*~%^()_+\-=\[\]{}|\\:;"\<>,.?/]'));
 
-    if (!hasUppercase)
+    if (!hasUppercase) {
       return 'Password must have at least one uppercase letter';
-    if (!hasLowercase)
+    }
+    if (!hasLowercase) {
       return 'Password must have at least one lowercase letter';
+    }
     if (!hasDigit) return 'Password must have at least one number';
-    if (!hasSpecialChar)
+    if (!hasSpecialChar) {
       return 'Password must have at least one special character';
+    }
 
     return null;
   }
@@ -474,13 +479,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       ),
                                     ),
                                     if (_isPasswordFieldFocused)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 8.0),
+                                      const Padding(
+                                        padding: EdgeInsets.only(top: 8.0),
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
-                                          children: const [
+                                          children: [
                                             Text(
                                                 '• Must have at least one uppercase letter',
                                                 style: TextStyle(
@@ -630,7 +634,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       obscureText: obscureText,
       keyboardType: keyboardType,
       focusNode: focusNode,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w400,
         color: Colors.black87,
@@ -653,7 +657,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.blueAccent),
+          borderSide: const BorderSide(color: Colors.blueAccent),
         ),
       ),
       validator: validator,
@@ -687,7 +691,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     if (!emailRegex.hasMatch(usernameController.text)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Please enter a valid email address.'),
           backgroundColor: Colors.red,
         ),
@@ -808,7 +812,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         content: const SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text('1. We collect your data to improve your experience.'),
               SizedBox(height: 10),
               Text(

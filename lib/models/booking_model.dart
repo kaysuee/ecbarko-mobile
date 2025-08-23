@@ -105,7 +105,6 @@ extension BookingStatusExtension on BookingStatus {
   }
 }
 
-
 class BookingModel {
   final String bookingId;
   final String departureLocation;
@@ -216,7 +215,7 @@ class BookingModel {
       returnArriveDate: json['returnArriveDate'],
       returnArriveTime: json['returnArriveTime'],
       isRoundTrip: json['isRoundTrip'] ?? false,
-     passengers: int.tryParse(json['passengers'].toString()) ?? 0,
+      passengers: int.tryParse(json['passengers'].toString()) ?? 0,
       passengerDetails: (json['passengerDetails'] as List<dynamic>?)
               ?.map((p) => PassengerModel.fromJson(p))
               .toList() ??
@@ -294,4 +293,3 @@ class BookingModel {
     );
   }
 }
-

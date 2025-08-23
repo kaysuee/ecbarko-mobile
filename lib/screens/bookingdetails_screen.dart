@@ -21,9 +21,7 @@ class BookingDetailsScreen extends StatefulWidget {
     super.key,
     required this.schedcde,
     required this.departureLocation,
-
     required this.arrivalLocation,
-
     required this.departDate,
     required this.departTime,
     required this.arriveDate,
@@ -680,7 +678,7 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                                         suffixIcon:
                                             vehicle['vehicleType']!.text !=
                                                     "Other (Not Listed)"
-                                                ? Icon(Icons.lock,
+                                                ? const Icon(Icons.lock,
                                                     color: Colors.grey)
                                                 : null,
                                       ),
@@ -1032,15 +1030,22 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                                         })
                                     .toList(),
                                 hasVehicle: hasVehicle,
-                                vehicleDetail: hasVehicle && vehicleDetails.isNotEmpty
-                                          ? vehicleDetails.map((v) => {
-                                            "plateNumber": v["plateNumber"]!.text,
-                                            "carType": v["vehicleType"]!.text == "Other (Not Listed)"
-                                                ? v["customType"]!.text
-                                                : v["vehicleType"]!.text,
-                                            "vehicleOwner": "${v["driverFirstName"]!.text} ${v["driverLastName"]!.text}"
-                                          }).toList()
-                                        : [],
+                                vehicleDetail: hasVehicle &&
+                                        vehicleDetails.isNotEmpty
+                                    ? vehicleDetails
+                                        .map((v) => {
+                                              "plateNumber":
+                                                  v["plateNumber"]!.text,
+                                              "carType":
+                                                  v["vehicleType"]!.text ==
+                                                          "Other (Not Listed)"
+                                                      ? v["customType"]!.text
+                                                      : v["vehicleType"]!.text,
+                                              "vehicleOwner":
+                                                  "${v["driverFirstName"]!.text} ${v["driverLastName"]!.text}"
+                                            })
+                                        .toList()
+                                    : [],
                               ),
                             ),
                           ).then((_) {
@@ -1241,7 +1246,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => BookingScreen(
+                                            builder: (context) =>
+                                                const BookingScreen(
                                               initialTab: 0,
                                             ),
                                           ),

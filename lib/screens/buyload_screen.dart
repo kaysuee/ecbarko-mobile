@@ -1,6 +1,4 @@
 import 'package:EcBarko/screens/RFIDCard_screen.dart';
-import 'package:EcBarko/screens/about_screen.dart' as about_screen;
-import 'package:EcBarko/screens/profile_screen.dart';
 import 'package:EcBarko/widgets/bounce_tap_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -8,17 +6,14 @@ import '../widgets/payment_card.dart';
 import 'package:qr_flutter/qr_flutter.dart'; // Add this package for QR code generation
 import 'dart:math'; // For generating transaction IDs
 
-import '../screens/history_screen.dart';
-
 import 'package:EcBarko/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com'; // iOS or desktop
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 

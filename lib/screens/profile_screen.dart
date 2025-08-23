@@ -12,7 +12,8 @@ import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com'; // iOS or desktop
+  // return 'https://ecbarko.onrender.com'; // iOS or desktop
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000';
 }
 
@@ -60,8 +61,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final topSectionHeight = 350.0;
-    final navBarHeight = 10.0;
+    const topSectionHeight = 350.0;
+    const navBarHeight = 10.0;
 
     return Scaffold(
       backgroundColor: Ec_BG_SKY_BLUE,
@@ -194,7 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => EditProfileScreen()));
+                                builder: (_) => const EditProfileScreen()));
                       }),
                   _buildDivider(),
                   _buildOptionTile(

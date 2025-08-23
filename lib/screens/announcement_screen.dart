@@ -31,6 +31,8 @@ class AnnouncementsScreen extends StatelessWidget {
     },
   ];
 
+  AnnouncementsScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final latest = announcements.first;
@@ -48,7 +50,7 @@ class AnnouncementsScreen extends StatelessWidget {
         ),
         backgroundColor: Ec_PRIMARY,
         centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
       body: Padding(
@@ -89,7 +91,7 @@ class AnnouncementsScreen extends StatelessWidget {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.08),
                     blurRadius: 12,
-                    offset: Offset(0, 4),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -116,7 +118,8 @@ class AnnouncementsScreen extends StatelessWidget {
                       SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
-                          latest['title']!.substring(latest['title']!.indexOf(' ') + 1),
+                          latest['title']!
+                              .substring(latest['title']!.indexOf(' ') + 1),
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w700,
@@ -165,7 +168,7 @@ class AnnouncementsScreen extends StatelessWidget {
                         BoxShadow(
                           color: Colors.black.withOpacity(0.06),
                           blurRadius: 8,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
@@ -192,7 +195,8 @@ class AnnouncementsScreen extends StatelessWidget {
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
-                                item['title']!.substring(item['title']!.indexOf(' ') + 1),
+                                item['title']!
+                                    .substring(item['title']!.indexOf(' ') + 1),
                                 style: TextStyle(
                                   fontSize: 15.sp,
                                   fontWeight: FontWeight.w700,

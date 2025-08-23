@@ -8,7 +8,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 String getBaseUrl() {
-  return 'https://ecbarko.onrender.com';
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
   // return 'http://localhost:3000'; // Change this to your actual base URL
 }
 
@@ -70,7 +71,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final isLoad = transaction.type == 'Load';
     final title =
         isLoad ? 'Purchased EcBarko RFID Load' : 'Payment for EcBarko RFID';
-    final amount = '₱${transaction.amount?.toStringAsFixed(2) ?? '0.00'}'
+    final amount = '₱${transaction.amount.toStringAsFixed(2) ?? '0.00'}'
         .replaceAllMapped(
             RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},');
 
