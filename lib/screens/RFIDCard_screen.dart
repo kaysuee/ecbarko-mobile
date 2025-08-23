@@ -214,7 +214,80 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
     await _loadCardHistory();
   }
 
+  // Widget _buildCardFront() {
+  //   return Card(
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.circular(12.r),
+  //     ),
+  //     elevation: 6,
+  //     child: Container(
+  //       height: 210.h,
+  //       padding: EdgeInsets.all(16.w),
+  //       decoration: BoxDecoration(
+  //         gradient: const RadialGradient(
+  //           center: Alignment.center,
+  //           radius: 1.0,
+  //           colors: [
+  //             Color(0xFF1A5A91),
+  //             Color(0xFF142F60),
+  //           ],
+  //           stops: [0.3, 1.0],
+  //         ),
+  //         borderRadius: BorderRadius.circular(12.r),
+  //       ),
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Image.asset(
+  //             'assets/images/ecbarkowhitelogo.png',
+  //             width: 130.w,
+  //             height: 130.w,
+  //           ),
+  //           SizedBox(height: 10.h),
+  //           if (cardData != null && cardData!['cardNumber'] != null) ...[
+  //             Text(
+  //               cardData!['cardLabel'] ?? 'ECBARKO Card',
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontSize: 18.sp,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //             SizedBox(height: 5.h),
+  //             Text(
+  //               'Tap to view card details',
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontSize: 14.sp,
+  //               ),
+  //             ),
+  //           ] else ...[
+  //             Text(
+  //               'No Card Linked',
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontSize: 18.sp,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //             SizedBox(height: 5.h),
+  //             Text(
+  //               'Tap to link your card',
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontSize: 14.sp,
+  //               ),
+  //             ),
+  //           ],
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget _buildCardFront() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.r),
@@ -238,10 +311,12 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Responsive image
             Image.asset(
               'assets/images/ecbarkowhitelogo.png',
-              width: 130.w,
-              height: 130.w,
+              width: screenWidth * 0.35, // 35% of screen width
+              height: screenWidth * 0.35, // maintain square aspect ratio
+              fit: BoxFit.contain,
             ),
             SizedBox(height: 10.h),
             if (cardData != null && cardData!['cardNumber'] != null) ...[
@@ -285,6 +360,128 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
     );
   }
 
+  // Widget _buildCardBack() {
+  //   return Card(
+  //     shape: RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.circular(12.r),
+  //     ),
+  //     elevation: 6,
+  //     child: Container(
+  //       height: 210.h,
+  //       padding: EdgeInsets.all(16.w),
+  //       decoration: BoxDecoration(
+  //         color: Colors.white,
+  //         borderRadius: BorderRadius.circular(12.r),
+  //       ),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           // Magnetic strip
+  //           Container(
+  //             height: 32.h,
+  //             width: double.infinity,
+  //             color: Colors.grey[850],
+  //           ),
+  //           SizedBox(height: 4.h),
+
+  //           // Card Number (centered)
+  //           Center(
+  //             child: Column(
+  //               mainAxisSize: MainAxisSize.min,
+  //               children: [
+  //                 Text(
+  //                   cardData != null && cardData!['cardNumber'] != null
+  //                       ? formatCard(cardData!['cardNumber'])
+  //                       : 'No card linked',
+  //                   style: TextStyle(
+  //                     color: Colors.black,
+  //                     fontSize: 16.sp,
+  //                     fontWeight: FontWeight.w600,
+  //                     letterSpacing: 1.2,
+  //                   ),
+  //                 ),
+  //                 if (cardData != null && cardData!['cardLabel'] != null) ...[
+  //                   SizedBox(height: 0.h),
+  //                   Text(
+  //                     cardData!['cardLabel'],
+  //                     style: TextStyle(
+  //                       fontSize: 12.sp,
+  //                       fontStyle: FontStyle.italic,
+  //                       color: Colors.black,
+  //                     ),
+  //                     textAlign: TextAlign.center,
+  //                   ),
+  //                 ],
+  //               ],
+  //             ),
+  //           ),
+  //           SizedBox(height: 0.h),
+
+  //           // Terms and conditions text
+  //           Text(
+  //             'By using this card, the cardholder acknowledges that they have read and agreed '
+  //             'to be bound by the Terms & Conditions of EcBarko. This card is non-transferable, '
+  //             'and any tampering will render it invalid. If found, please return to the Philippine '
+  //             'Ports Authority, Brgy. Talao-Talao, Port Area, Lucena City 4301, Philippines.',
+  //             style: TextStyle(
+  //               color: Colors.black,
+  //               fontSize: 10.sp,
+  //             ),
+  //             textAlign: TextAlign.justify,
+  //           ),
+  //           // const Spacer(),
+
+  //           // Logos and contact info
+  //           Row(
+  //             crossAxisAlignment: CrossAxisAlignment.end,
+  //             children: [
+  //               Image.asset(
+  //                 'assets/images/ppalogo.png', // Make sure this exists
+  //                 width: 36.w,
+  //                 height: 36.w,
+  //               ),
+  //               SizedBox(width: 8.w),
+  //               Image.asset(
+  //                 'assets/images/logoWhite.png', // Consider using logoBlue.png for contrast
+  //                 width: 36.w,
+  //                 height: 36.w,
+  //               ),
+  //               const Spacer(),
+  //               Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.end,
+  //                 children: [
+  //                   Text(
+  //                     'For customer assistance, call',
+  //                     style: TextStyle(
+  //                       fontSize: 10.sp,
+  //                       color: Colors.black,
+  //                     ),
+  //                   ),
+  //                   Text(
+  //                     '09614505935',
+  //                     style: TextStyle(
+  //                       fontSize: 10.sp,
+  //                       fontWeight: FontWeight.bold,
+  //                       color: Colors.black,
+  //                     ),
+  //                   ),
+  //                   Text(
+  //                     'or visit www.ecbarko.com',
+  //                     style: TextStyle(
+  //                       fontSize: 10.sp,
+  //                       color: Colors.black,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               )
+  //             ],
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget _buildCardBack() {
     return Card(
       shape: RoundedRectangleBorder(
@@ -301,14 +498,6 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Magnetic strip
-            Container(
-              height: 32.h,
-              width: double.infinity,
-              color: Colors.grey[850],
-            ),
-            SizedBox(height: 4.h),
-
             // Card Number (centered)
             Center(
               child: Column(
@@ -320,13 +509,13 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                         : 'No card linked',
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 16.sp,
+                      fontSize: 24.sp,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.2,
                     ),
                   ),
                   if (cardData != null && cardData!['cardLabel'] != null) ...[
-                    SizedBox(height: 0.h),
+                    SizedBox(height: 4.h),
                     Text(
                       cardData!['cardLabel'],
                       style: TextStyle(
@@ -340,36 +529,39 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 0.h),
+            SizedBox(height: 12.h),
 
             // Terms and conditions text
-            Text(
-              'By using this card, the cardholder acknowledges that they have read and agreed '
-              'to be bound by the Terms & Conditions of EcBarko. This card is non-transferable, '
-              'and any tampering will render it invalid. If found, please return to the Philippine '
-              'Ports Authority, Brgy. Talao-Talao, Port Area, Lucena City 4301, Philippines.',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 10.sp,
+            Expanded(
+              child: Text(
+                'By using this card, the cardholder acknowledges that they have read and agreed '
+                'to be bound by the Terms & Conditions of EcBarko. This card is non-transferable, '
+                'and any tampering will render it invalid. If found, please return to the Philippine '
+                'Ports Authority, Brgy. Talao-Talao, Port Area, Lucena City 4301, Philippines.',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 13.sp,
+                ),
+                textAlign: TextAlign.justify,
               ),
-              textAlign: TextAlign.justify,
             ),
-            // const Spacer(),
+
+            SizedBox(height: 12.h),
 
             // Logos and contact info
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Image.asset(
-                  'assets/images/ppalogo.png', // Make sure this exists
-                  width: 36.w,
-                  height: 36.w,
+                  'assets/images/ppalogo.png',
+                  width: 50.w,
+                  height: 50.w,
                 ),
                 SizedBox(width: 8.w),
                 Image.asset(
-                  'assets/images/logoWhite.png', // Consider using logoBlue.png for contrast
-                  width: 36.w,
-                  height: 36.w,
+                  'assets/images/logoWhite.png',
+                  width: 50.w,
+                  height: 50.w,
                 ),
                 const Spacer(),
                 Column(
@@ -398,7 +590,7 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ],

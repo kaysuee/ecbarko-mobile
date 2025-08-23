@@ -2,6 +2,7 @@ import 'package:EcBarko/constants.dart';
 import 'package:EcBarko/screens/bookingdetails_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+ 
 
 class ScheduleCard extends StatelessWidget {
   final String schedcde;
@@ -79,7 +80,7 @@ class ScheduleCard extends StatelessWidget {
 
               SizedBox(height: 10.h),
 
-              // 🔵 PATH VISUAL
+              // 🔵 PATH VISUAL (solid line with arrow at arrival)
               Row(
                 children: [
                   Container(
@@ -91,20 +92,9 @@ class ScheduleCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 5.w),
-                  Container(width: 129.w, height: 2.h, color: Ec_PRIMARY),
+                  Expanded(child: Container(height: 2.h, color: Ec_PRIMARY)),
                   SizedBox(width: 5.w),
-                  Icon(Icons.directions_boat, color: Ec_PRIMARY, size: 40.sp),
-                  SizedBox(width: 5.w),
-                  Container(width: 129.w, height: 2.h, color: Ec_PRIMARY),
-                  SizedBox(width: 5.w),
-                  Container(
-                    width: 10.w,
-                    height: 10.w,
-                    decoration: const BoxDecoration(
-                      color: Ec_PRIMARY,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+                  Icon(Icons.arrow_forward, color: Ec_BLACK, size: 18.sp),
                 ],
               ),
 
@@ -232,4 +222,6 @@ class ScheduleCard extends StatelessWidget {
       },
     );
   }
+
+  // Removed dotted line and duration helpers to return to the original simpler design
 }

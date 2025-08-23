@@ -146,7 +146,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 5.h,
+          // top: MediaQuery.of(context).padding.top + 5.h,
+          top: 0,
           left: 5.w,
           right: 5.w,
           bottom: 80.h,
@@ -178,23 +179,127 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Widget _buildRFIDImage(BuildContext context) {
+  //   return BounceTapWrapper(
+  //     onTap: () =>
+  //         _navigateTo(context, const RFIDCardScreen(showBackButton: true)),
+  //     child: Card(
+  //       color: Ec_PRIMARY,
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(16.r),
+  //       ),
+  //       elevation: 8,
+  //       margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+  //       child: Container(
+  //         width: double.infinity,
+  //         height: 220.h,
+  //         padding: EdgeInsets.all(18.w),
+  //         decoration: BoxDecoration(
+  //           borderRadius: BorderRadius.circular(16.r),
+  //           gradient: const RadialGradient(
+  //             center: Alignment.center,
+  //             radius: 1.0,
+  //             colors: [
+  //               Color(0xFF1A5A91),
+  //               Color(0xFF142F60),
+  //             ],
+  //             stops: [0.3, 1.0],
+  //           ),
+  //         ),
+  //         child: Column(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             Row(
+  //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //               children: [
+  //                 Image.asset(
+  //                   'assets/images/ecbarkowhitelogo.png',
+  //                   width: 60.w,
+  //                   height: 60.w,
+  //                 ),
+  //                 Text(
+  //                   'RFID CARD',
+  //                   style: TextStyle(
+  //                     color: Colors.white,
+  //                     fontSize: 25.sp,
+  //                     fontWeight: FontWeight.w700,
+  //                     letterSpacing: 1.2,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //             SizedBox(height: 30.h),
+  //             Row(
+  //               children: [
+  //                 Text(
+  //                   'Available Balance',
+  //                   style: TextStyle(
+  //                     color: Colors.white.withOpacity(0.9),
+  //                     fontSize: 25.sp,
+  //                     fontWeight: FontWeight.w500,
+  //                   ),
+  //                 ),
+  //                 SizedBox(width: 8.w),
+  //                 GestureDetector(
+  //                   onTap: () {
+  //                     setState(() {
+  //                       isBalanceVisible = !isBalanceVisible;
+  //                     });
+  //                   },
+  //                   child: Icon(
+  //                     isBalanceVisible
+  //                         ? Icons.visibility
+  //                         : Icons.visibility_off,
+  //                     color: Colors.white.withOpacity(0.8),
+  //                     size: 25.sp,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //             SizedBox(height: 4.h),
+  //             Text(
+  //               isBalanceVisible == true
+  //                   ? '₱${(cardData?['balance']?.toString() ?? '0').replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}'
+  //                   : '•••••••••',
+  //               style: TextStyle(
+  //                 color: Colors.white,
+  //                 fontSize: 40.sp,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
   Widget _buildRFIDImage(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Use a fraction of screen height for the card height
+    final cardHeight = screenHeight * 0.28; // ~28% of screen height
+
     return BounceTapWrapper(
       onTap: () =>
           _navigateTo(context, const RFIDCardScreen(showBackButton: true)),
       child: Card(
         color: Ec_PRIMARY,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius:
+              BorderRadius.circular(screenWidth * 0.04), // 4% of width
         ),
         elevation: 8,
-        margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+        margin: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.03, // 3% horizontal margin
+          vertical: screenHeight * 0.01, // 1% vertical margin
+        ),
         child: Container(
           width: double.infinity,
-          height: 220.h,
-          padding: EdgeInsets.all(18.w),
+          height: cardHeight,
+          padding: EdgeInsets.all(screenWidth * 0.045), // 4.5% padding
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16.r),
+            borderRadius: BorderRadius.circular(screenWidth * 0.04),
             gradient: const RadialGradient(
               center: Alignment.center,
               radius: 1.0,
@@ -213,32 +318,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Image.asset(
                     'assets/images/ecbarkowhitelogo.png',
-                    width: 60.w,
-                    height: 60.w,
+                    width: screenWidth * 0.13, // 13% of screen width
+                    height: screenWidth * 0.13,
                   ),
                   Text(
                     'RFID CARD',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 25.sp,
+                      fontSize: screenWidth * 0.065, // responsive font size
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 30.h),
+              SizedBox(height: screenHeight * 0.04), // 4% spacing
               Row(
                 children: [
                   Text(
                     'Available Balance',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
-                      fontSize: 25.sp,
+                      fontSize: screenWidth * 0.040, // responsive font size
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  SizedBox(width: 8.w),
+                  SizedBox(width: screenWidth * 0.02),
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -250,19 +355,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ? Icons.visibility
                           : Icons.visibility_off,
                       color: Colors.white.withOpacity(0.8),
-                      size: 25.sp,
+                      size: screenWidth * 0.065,
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 4.h),
+              SizedBox(height: screenHeight * 0.005),
               Text(
-                isBalanceVisible == true
+                isBalanceVisible
                     ? '₱${(cardData?['balance']?.toString() ?? '0').replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}'
-                    : '•••••••••',
+                    : '••••••',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 40.sp,
+                  fontSize: screenWidth * 0.08, // responsive big font
                   fontWeight: FontWeight.bold,
                 ),
               ),
