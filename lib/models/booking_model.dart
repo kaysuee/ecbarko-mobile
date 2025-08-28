@@ -1,4 +1,4 @@
-// File: models/booking_models.dart
+// File: models/booking_model.dart
 
 class PassengerModel {
   final String name;
@@ -121,6 +121,7 @@ class BookingModel {
   final String? returnTime;
   final String? returnArriveDate;
   final String? returnArriveTime;
+
   final bool isRoundTrip;
 
   final int passengers;
@@ -192,7 +193,7 @@ class BookingModel {
       'shippingLine': shippingLine,
       'bookingDate': bookingDate,
       'createdAt': createdAt.toIso8601String(),
-      'totalAmount': totalAmount,
+      'payment': totalAmount,
       'paymentStatus': paymentStatus,
       'paymentMethod': paymentMethod,
       'transactionId': transactionId,
@@ -200,6 +201,28 @@ class BookingModel {
   }
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
+    // Parse passengers safely
+    int passengerCount = 0;
+    if (json['passengers'] != null) {
+      if (json['passengers'] is int) {
+        passengerCount = json['passengers'];
+      } else if (json['passengers'] is String) {
+        passengerCount = int.tryParse(json['passengers']) ?? 0;
+      } else if (json['passengers'] is double) {
+        passengerCount = json['passengers'].toInt();
+      } else {
+        passengerCount = 0;
+      }
+    }
+
+    // Parse createdAt safely
+    DateTime createdDate;
+    try {
+      createdDate = DateTime.parse(json['createdAt'] ?? '');
+    } catch (e) {
+      createdDate = DateTime.now();
+    }
+
     return BookingModel(
       bookingId: json['bookingId'] ?? '',
       departureLocation: json['departureLocation'] ?? '',
@@ -215,7 +238,7 @@ class BookingModel {
       returnArriveDate: json['returnArriveDate'],
       returnArriveTime: json['returnArriveTime'],
       isRoundTrip: json['isRoundTrip'] ?? false,
-      passengers: int.tryParse(json['passengers'].toString()) ?? 0,
+      passengers: passengerCount,
       passengerDetails: (json['passengerDetails'] as List<dynamic>?)
               ?.map((p) => PassengerModel.fromJson(p))
               .toList() ??
@@ -227,9 +250,9 @@ class BookingModel {
       status: BookingStatusExtension.fromString(json['status'] ?? 'pending'),
       shippingLine: json['shippingLine'] ?? '',
       bookingDate: json['bookingDate'] ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      totalAmount: (json['totalAmount'] ?? 0).toDouble(),
-      paymentStatus: json['paymentStatus'] ?? 'pending',
+      createdAt: createdDate,
+      totalAmount: (json['totalAmount'] ?? json['payment'] ?? 0).toDouble(),
+      paymentStatus: json['paymentStatus'] ?? json['isPaid'] ?? 'pending',
       paymentMethod: json['paymentMethod'],
       transactionId: json['transactionId'],
     );

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math';
 
 class BookingDetailsScreen extends StatefulWidget {
   final String schedcde;
@@ -16,6 +18,7 @@ class BookingDetailsScreen extends StatefulWidget {
   final String arriveDate;
   final String arriveTime;
   final String shippingLine;
+  final VoidCallback? onBookingCompleted; // Callback for booking completion
 
   const BookingDetailsScreen({
     super.key,
@@ -27,6 +30,7 @@ class BookingDetailsScreen extends StatefulWidget {
     required this.arriveDate,
     required this.arriveTime,
     required this.shippingLine,
+    this.onBookingCompleted,
   });
 
   @override
@@ -80,6 +84,20 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
 
   bool hasVehicle = false;
   String? selectedCardType;
+  late String bookingReference;
+
+  @override
+  void initState() {
+    super.initState();
+    bookingReference = _generateReference();
+  }
+
+  String _generateReference() {
+    final random = Random();
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return List.generate(8, (index) => chars[random.nextInt(chars.length)])
+        .join();
+  }
 
   void addPassenger() {
     setState(() {
@@ -1002,10 +1020,36 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           if (hasVehicle && vehicleDetails.isNotEmpty) {
                             final selectedVehicle = vehicleDetails.first;
                             selectedCardType = selectedVehicle['carType']!.text;
+                          }
+
+                          // Check if payment has already been completed
+                          final prefs = await SharedPreferences.getInstance();
+                          final paymentKey = 'payment_$bookingReference';
+                          final isAlreadyPaid =
+                              prefs.getBool(paymentKey) ?? false;
+
+                          if (isAlreadyPaid) {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text("Payment Already Completed"),
+                                content: const Text(
+                                    "This booking has already been paid for. You cannot proceed to payment again."),
+                                actions: [
+                                  TextButton(
+                                    child: const Text("OK",
+                                        style: TextStyle(color: Ec_PRIMARY)),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                  ),
+                                ],
+                              ),
+                            );
+                            return;
                           }
 
                           Navigator.of(context).pop();
@@ -1046,6 +1090,8 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                                             })
                                         .toList()
                                     : [],
+                                bookingReference: bookingReference,
+                                onPaymentCompleted: widget.onBookingCompleted,
                               ),
                             ),
                           ).then((_) {

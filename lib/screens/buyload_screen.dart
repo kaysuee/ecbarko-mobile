@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/payment_card.dart';
 import 'package:qr_flutter/qr_flutter.dart'; // Add this package for QR code generation
-import 'dart:math'; // For generating transaction IDs
+import 'dart:math'
+    show Random, min; // For generating transaction IDs and min function
 
 import 'package:EcBarko/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../services/notification_service.dart';
 
 String getBaseUrl() {
   //return 'https://ecbarko.onrender.com';
@@ -34,6 +36,7 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
   final List<int> presetAmounts = [300, 500, 1000, 3000, 5000];
   int? selectedAmount;
   double amountValue = 0.0;
+  String? selectedPaymentMethod; // Add this line for payment method selection
 
   @override
   void initState() {
@@ -69,6 +72,12 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
   }
 
   Future<void> _buyload() async {
+    // Safety check to ensure amountValue is valid
+    if (amountValue <= 0) {
+      print('Invalid amount value: $amountValue');
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     final userId = prefs.getString('userID');
@@ -84,25 +93,335 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
       );
 
       if (response.statusCode == 200) {
+        // Send card loaded notification
+        await NotificationService.notifyCardLoaded(
+          userId: userId,
+          amount: amountValue,
+          cardType: cardData?['cardType'] ?? 'EcBarko Card',
+        );
+
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Success",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text("Buy Load Successful!"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/home');
-                },
-                child: const Text("OK"),
+          barrierDismissible: false,
+          builder: (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20.r),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFF8FFFE),
+                    Color(0xFFE8F5E8),
+                  ],
+                ),
               ),
-            ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Success Icon with Animation
+                  Container(
+                    width: 80.w,
+                    height: 80.w,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 50.sp,
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // Success Title
+                  Text(
+                    'SUCCESS!',
+                    style: TextStyle(
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[700],
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+
+                  // Success Message
+                  Text(
+                    'Buy Load Successful!',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // Transaction Details Card
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSuccessDetailRow(
+                          'Amount Loaded:',
+                          '₱${amountValue.toStringAsFixed(2)}',
+                          Icons.attach_money,
+                          Colors.green,
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildSuccessDetailRow(
+                          'Card Type:',
+                          cardData?['cardType']?.toString() ?? 'EcBarko Card',
+                          Icons.credit_card,
+                          Ec_PRIMARY,
+                        ),
+                        SizedBox(height: 12.h),
+                        _buildSuccessDetailRow(
+                          'New Balance:',
+                          '₱${((double.tryParse(cardData?['balance']?.toString() ?? '0') ?? 0) + amountValue).toStringAsFixed(2)}',
+                          Icons.account_balance_wallet,
+                          Colors.blue,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // Success Message
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(color: Colors.green[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.green[600],
+                          size: 20.sp,
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            'Your RFID card has been loaded successfully! You can now use it for your trips.',
+                            style: TextStyle(
+                              color: Colors.green[700],
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushReplacementNamed(context, '/home');
+                      },
+                      icon: Icon(
+                        Icons.home,
+                        color: Colors.white,
+                        size: 20.sp,
+                      ),
+                      label: Text(
+                        'Go to Home',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Ec_PRIMARY,
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        elevation: 3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       } else {
         print('Failed to buy load card: ${response.statusCode}');
+
+        // Show improved error dialog
+        showDialog(
+          context: context,
+          builder: (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20.r),
+                gradient: const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFFFF8F8),
+                    Color(0xFFFFE8E8),
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Error Icon
+                  Container(
+                    width: 80.w,
+                    height: 80.w,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      color: Colors.white,
+                      size: 50.sp,
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // Error Title
+                  Text(
+                    'Oops!',
+                    style: TextStyle(
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red[700],
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+
+                  // Error Message
+                  Text(
+                    'Failed to process payment',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  // Error Details
+                  Container(
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.red[600],
+                          size: 20.sp,
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: Text(
+                            'Please try again or contact support if the problem persists.',
+                            style: TextStyle(
+                              color: Colors.red[700],
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 24.h),
+
+                  // Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: Icon(
+                        Icons.refresh,
+                        color: Colors.white,
+                        size: 20.sp,
+                      ),
+                      label: Text(
+                        'Try Again',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[600],
+                        padding: EdgeInsets.symmetric(vertical: 14.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        elevation: 3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
       }
     }
   }
@@ -148,7 +467,23 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
   void _showQRPHPaymentSheet(String amount) {
     // Generate a transaction ID
     final String transactionId = _generateTransactionId();
-    amountValue = double.parse(amount);
+
+    // Safe parsing of amount with error handling
+    try {
+      amountValue = double.parse(amount);
+      if (amountValue <= 0) {
+        throw FormatException('Amount must be greater than 0');
+      }
+    } catch (e) {
+      print('Error parsing amount: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invalid amount: $amount'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     // Create QR Code data
     final String qrData = _generateQRData(transactionId, amountValue);
@@ -165,8 +500,8 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
           builder: (context, setState) {
             return Container(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
-              // height: MediaQuery.of(context).size.height * 0.8,height: min(MediaQuery.of(context).size.height * 0.95, 700.h),
-              height: min(MediaQuery.of(context).size.height * 0.90, 685.h),
+              // height: MediaQuery.of(context).size.height * 0.8,
+              // height: min(MediaQuery.of(context).size.height * 0.85, 700.h),
 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -253,7 +588,7 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
                     child: QrImageView(
                       data: qrData,
                       version: QrVersions.auto,
-                      size: 200.w,
+                      size: min(180.w, MediaQuery.of(context).size.width * 0.5),
                     ),
                   ),
                   SizedBox(height: 10.h),
@@ -275,7 +610,7 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
                     ),
                   ),
 
-                  const Spacer(),
+                  SizedBox(height: 20.h),
                   // Smaller Instructions Container
                   Container(
                     width: double.infinity,
@@ -324,7 +659,135 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            _buyload();
+                            // Show confirmation dialog before proceeding
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.payment,
+                                        color: Ec_PRIMARY,
+                                        size: 24.sp,
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Text(
+                                        'Confirm Payment',
+                                        style: TextStyle(
+                                          fontSize: 18.sp,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Please confirm the following details:',
+                                        style: TextStyle(
+                                          fontSize: 14.sp,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      SizedBox(height: 16.h),
+                                      _buildConfirmationRow(
+                                        'Payment Method:',
+                                        'QR PH',
+                                        Icons.qr_code,
+                                        Ec_PRIMARY,
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      _buildConfirmationRow(
+                                        'Amount:',
+                                        '₱${amountValue.toStringAsFixed(2)}',
+                                        Icons.attach_money,
+                                        Colors.green,
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      _buildConfirmationRow(
+                                        'Transaction ID:',
+                                        transactionId,
+                                        Icons.receipt,
+                                        Colors.orange,
+                                      ),
+                                      SizedBox(height: 16.h),
+                                      Container(
+                                        padding: EdgeInsets.all(12.w),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[50],
+                                          borderRadius:
+                                              BorderRadius.circular(8.r),
+                                          border: Border.all(
+                                              color: Colors.blue[200]!),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.info_outline,
+                                              color: Colors.blue[600],
+                                              size: 16.sp,
+                                            ),
+                                            SizedBox(width: 8.w),
+                                            Expanded(
+                                              child: Text(
+                                                'Please ensure you have completed the QR PH payment before confirming.',
+                                                style: TextStyle(
+                                                  color: Colors.blue[700],
+                                                  fontSize: 12.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
+                                      child: Text(
+                                        'Cancel',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14.sp,
+                                        ),
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(context)
+                                            .pop(); // Close dialog
+                                        Navigator.pop(
+                                            context); // Close payment sheet
+                                        _buyload(); // Proceed with loading
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Ec_PRIMARY,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8.r),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Confirm & Load',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
                           },
                           icon: Icon(
                             Icons.add,
@@ -479,7 +942,7 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
         margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
         child: Container(
           width: double.infinity,
-          height: 220.h,
+          // height: 220.h,
           padding: EdgeInsets.all(18.w),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16.r),
@@ -501,14 +964,14 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
                 children: [
                   Image.asset(
                     'assets/images/logoWhite.png',
-                    width: 60.w,
-                    height: 60.w,
+                    width: 50.w, // reduced from 60.w to 50.w
+                    height: 50.w,
                   ),
                   Text(
                     'RFID CARD',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 25.sp,
+                      fontSize: 22.sp, // reduced from 25.sp to 22.sp
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                     ),
@@ -522,7 +985,7 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
                     'Available Balance',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
-                      fontSize: 25.sp,
+                      fontSize: 16.sp, // reduced from 18.sp to 16.sp
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -538,20 +1001,24 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
                           ? Icons.visibility
                           : Icons.visibility_off,
                       color: Colors.white.withOpacity(0.8),
-                      size: 25.sp,
+                      size: 18.sp, // reduced from 20.sp to 18.sp
                     ),
                   ),
                 ],
               ),
               SizedBox(height: 4.h),
-              Text(
-                isBalanceVisible == true
-                    ? '₱${(cardData?['balance']?.toString() ?? '0').replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}'
-                    : '•••••••••',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 40.sp,
-                  fontWeight: FontWeight.bold,
+              Flexible(
+                child: Text(
+                  isBalanceVisible == true
+                      ? '₱${(cardData?['balance']?.toString() ?? '0').replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}'
+                      : '•••••••••',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28.sp, // reduced from 40.sp to 28.sp
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -1174,7 +1641,12 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
               iconColor: Ec_PRIMARY,
               title: 'QR PH',
               subtitle: 'Scan with any banking app or e-wallet',
-              onTap: () => navigateToPaymentScreen("QRPH"),
+              isSelected: selectedPaymentMethod == 'QRPH',
+              onTap: () {
+                setState(() {
+                  selectedPaymentMethod = 'QRPH';
+                });
+              },
             ),
             SizedBox(height: 12.h),
 
@@ -1184,27 +1656,100 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
               iconColor: Colors.green,
               title: 'E-Wallet',
               subtitle: 'GCash, PayMaya, or other digital wallets',
-              onTap: () => navigateToPaymentScreen("E-Wallet"),
+              isSelected: selectedPaymentMethod == 'E-Wallet',
+              onTap: () {
+                setState(() {
+                  selectedPaymentMethod = 'E-Wallet';
+                });
+              },
             ),
+
+            // Help text
+            if (selectedPaymentMethod == null) ...[
+              SizedBox(height: 16.h),
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.blue[600],
+                      size: 20.sp,
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        'Please select a payment method to continue',
+                        style: TextStyle(
+                          color: Colors.blue[700],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              SizedBox(height: 16.h),
+              Container(
+                padding: EdgeInsets.all(12.w),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(8.r),
+                  border: Border.all(color: Colors.green[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: Colors.green[600],
+                      size: 20.sp,
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        'Payment method selected: $selectedPaymentMethod',
+                        style: TextStyle(
+                          color: Colors.green[700],
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             SizedBox(height: 30.h),
 
 // Proceed to Payment Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => navigateToPaymentScreen(
-                  "QRPH", // Default to QRPH or adjust logic to let user select preferred
-                ),
+                onPressed: selectedPaymentMethod == null
+                    ? null
+                    : () => navigateToPaymentScreen(selectedPaymentMethod!),
                 icon: Icon(Icons.payment, color: Ec_LIGHT_PRIMARY, size: 20.sp),
                 label: Text(
-                  'Proceed to Payment',
+                  selectedPaymentMethod == null
+                      ? 'Select Payment Method'
+                      : 'Proceed to Payment',
                   style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                       color: Ec_WHITE),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Ec_PRIMARY,
+                  backgroundColor: selectedPaymentMethod == null
+                      ? Colors.grey[400]
+                      : Ec_PRIMARY,
                   padding: EdgeInsets.symmetric(vertical: 14.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
@@ -1224,6 +1769,7 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
     required Color iconColor,
     required String title,
     required String subtitle,
+    required bool isSelected,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -1232,7 +1778,7 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isSelected ? iconColor.withOpacity(0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
@@ -1241,16 +1787,21 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
               offset: const Offset(0, 2),
             ),
           ],
+          border: Border.all(
+            color: isSelected ? iconColor : Colors.grey[300]!,
+            width: isSelected ? 2.0 : 1.0,
+          ),
         ),
         child: Row(
           children: [
             Container(
               padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: isSelected ? iconColor : iconColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: iconColor, size: 24.sp),
+              child: Icon(icon,
+                  color: isSelected ? Colors.white : iconColor, size: 24.sp),
             ),
             SizedBox(width: 16.w),
             Expanded(
@@ -1260,7 +1811,7 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      color: Colors.black87,
+                      color: isSelected ? iconColor : Colors.black87,
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1269,21 +1820,105 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: isSelected
+                          ? iconColor.withOpacity(0.7)
+                          : Colors.grey[600],
                       fontSize: 12.sp,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey[400],
-              size: 16.sp,
-            ),
+            if (isSelected)
+              Container(
+                padding: EdgeInsets.all(4.w),
+                decoration: BoxDecoration(
+                  color: iconColor,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 16.sp,
+                ),
+              )
+            else
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey[400],
+                size: 16.sp,
+              ),
           ],
         ),
       ),
+    );
+  }
+
+  // Helper method for confirmation dialog rows
+  Widget _buildConfirmationRow(
+      String label, String value, IconData icon, Color iconColor) {
+    return Row(
+      children: [
+        Icon(icon, color: iconColor, size: 20.sp),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper method for success detail rows
+  Widget _buildSuccessDetailRow(
+      String label, String value, IconData icon, Color iconColor) {
+    return Row(
+      children: [
+        Icon(icon, color: iconColor, size: 20.sp),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

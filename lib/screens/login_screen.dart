@@ -2,6 +2,7 @@ import '../constants.dart';
 import '../widgets/customfont.dart';
 import '../widgets/custom_inkwell_button.dart';
 import '../widgets/custom_textformfield.dart';
+import '../utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -24,7 +25,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, ResponsiveWidgetMixin {
   final _formKey = GlobalKey<FormState>();
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -470,7 +471,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       buttonName: _isLoading
                                           ? 'Logging in...'
                                           : 'Login',
-                                      fontSize: ScreenUtil().setSp(16),
+                                      fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                     ),
                                     // const SizedBox(height: 20),

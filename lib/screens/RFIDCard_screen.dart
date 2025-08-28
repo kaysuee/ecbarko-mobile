@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../screens/buyload_screen.dart';
+
 import '../models/transaction_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../services/notification_service.dart';
 
 String formatCard(String cardNumber) {
   if (cardNumber.length != 12) return cardNumber;
@@ -214,79 +216,9 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
     await _loadCardHistory();
   }
 
-  // Widget _buildCardFront() {
-  //   return Card(
-  //     shape: RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.circular(12.r),
-  //     ),
-  //     elevation: 6,
-  //     child: Container(
-  //       height: 210.h,
-  //       padding: EdgeInsets.all(16.w),
-  //       decoration: BoxDecoration(
-  //         gradient: const RadialGradient(
-  //           center: Alignment.center,
-  //           radius: 1.0,
-  //           colors: [
-  //             Color(0xFF1A5A91),
-  //             Color(0xFF142F60),
-  //           ],
-  //           stops: [0.3, 1.0],
-  //         ),
-  //         borderRadius: BorderRadius.circular(12.r),
-  //       ),
-  //       child: Column(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           Image.asset(
-  //             'assets/images/ecbarkowhitelogo.png',
-  //             width: 130.w,
-  //             height: 130.w,
-  //           ),
-  //           SizedBox(height: 10.h),
-  //           if (cardData != null && cardData!['cardNumber'] != null) ...[
-  //             Text(
-  //               cardData!['cardLabel'] ?? 'ECBARKO Card',
-  //               style: TextStyle(
-  //                 color: Colors.white,
-  //                 fontSize: 18.sp,
-  //                 fontWeight: FontWeight.bold,
-  //               ),
-  //             ),
-  //             SizedBox(height: 5.h),
-  //             Text(
-  //               'Tap to view card details',
-  //               style: TextStyle(
-  //                 color: Colors.white,
-  //                 fontSize: 14.sp,
-  //               ),
-  //             ),
-  //           ] else ...[
-  //             Text(
-  //               'No Card Linked',
-  //               style: TextStyle(
-  //                 color: Colors.white,
-  //                 fontSize: 18.sp,
-  //                 fontWeight: FontWeight.bold,
-  //               ),
-  //             ),
-  //             SizedBox(height: 5.h),
-  //             Text(
-  //               'Tap to link your card',
-  //               style: TextStyle(
-  //                 color: Colors.white,
-  //                 fontSize: 14.sp,
-  //               ),
-  //             ),
-  //           ],
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildCardFront() {
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Card(
       shape: RoundedRectangleBorder(
@@ -294,8 +226,9 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
       ),
       elevation: 6,
       child: Container(
-        height: 210.h,
-        padding: EdgeInsets.all(16.w),
+        height: screenHeight * 0.25, // Responsive height: 25% of screen height
+        padding: EdgeInsets.all(
+            screenWidth * 0.04), // Responsive padding: 4% of screen width
         decoration: BoxDecoration(
           gradient: const RadialGradient(
             center: Alignment.center,
@@ -311,47 +244,57 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Responsive image
-            Image.asset(
-              'assets/images/ecbarkowhitelogo.png',
-              width: screenWidth * 0.35, // 35% of screen width
-              height: screenWidth * 0.35, // maintain square aspect ratio
-              fit: BoxFit.contain,
+            // Responsive image with proper sizing
+            SizedBox(
+              width: screenWidth * 0.18, // Reduced from 0.25 to 0.18
+              height: screenWidth * 0.18,
+              child: Image.asset(
+                'assets/images/ecbarkowhitelogo.png',
+                fit: BoxFit.contain,
+              ),
             ),
-            SizedBox(height: 10.h),
+            SizedBox(height: screenHeight * 0.015), // Responsive spacing
             if (cardData != null && cardData!['cardNumber'] != null) ...[
               Text(
                 cardData!['cardLabel'] ?? 'ECBARKO Card',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18.sp,
+                  fontSize: screenWidth *
+                      0.045, // Responsive font size: 4.5% of screen width
                   fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(height: 5.h),
+              SizedBox(height: screenHeight * 0.01), // Responsive spacing
               Text(
                 'Tap to view card details',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14.sp,
+                  fontSize: screenWidth *
+                      0.035, // Responsive font size: 3.5% of screen width
                 ),
+                textAlign: TextAlign.center,
               ),
             ] else ...[
               Text(
                 'No Card Linked',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18.sp,
+                  fontSize: screenWidth *
+                      0.045, // Responsive font size: 4.5% of screen width
                   fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(height: 5.h),
+              SizedBox(height: screenHeight * 0.01), // Responsive spacing
               Text(
                 'Tap to link your card',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 14.sp,
+                  fontSize: screenWidth *
+                      0.035, // Responsive font size: 3.5% of screen width
                 ),
+                textAlign: TextAlign.center,
               ),
             ],
           ],
@@ -360,137 +303,19 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
     );
   }
 
-  // Widget _buildCardBack() {
-  //   return Card(
-  //     shape: RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.circular(12.r),
-  //     ),
-  //     elevation: 6,
-  //     child: Container(
-  //       height: 210.h,
-  //       padding: EdgeInsets.all(16.w),
-  //       decoration: BoxDecoration(
-  //         color: Colors.white,
-  //         borderRadius: BorderRadius.circular(12.r),
-  //       ),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           // Magnetic strip
-  //           Container(
-  //             height: 32.h,
-  //             width: double.infinity,
-  //             color: Colors.grey[850],
-  //           ),
-  //           SizedBox(height: 4.h),
-
-  //           // Card Number (centered)
-  //           Center(
-  //             child: Column(
-  //               mainAxisSize: MainAxisSize.min,
-  //               children: [
-  //                 Text(
-  //                   cardData != null && cardData!['cardNumber'] != null
-  //                       ? formatCard(cardData!['cardNumber'])
-  //                       : 'No card linked',
-  //                   style: TextStyle(
-  //                     color: Colors.black,
-  //                     fontSize: 16.sp,
-  //                     fontWeight: FontWeight.w600,
-  //                     letterSpacing: 1.2,
-  //                   ),
-  //                 ),
-  //                 if (cardData != null && cardData!['cardLabel'] != null) ...[
-  //                   SizedBox(height: 0.h),
-  //                   Text(
-  //                     cardData!['cardLabel'],
-  //                     style: TextStyle(
-  //                       fontSize: 12.sp,
-  //                       fontStyle: FontStyle.italic,
-  //                       color: Colors.black,
-  //                     ),
-  //                     textAlign: TextAlign.center,
-  //                   ),
-  //                 ],
-  //               ],
-  //             ),
-  //           ),
-  //           SizedBox(height: 0.h),
-
-  //           // Terms and conditions text
-  //           Text(
-  //             'By using this card, the cardholder acknowledges that they have read and agreed '
-  //             'to be bound by the Terms & Conditions of EcBarko. This card is non-transferable, '
-  //             'and any tampering will render it invalid. If found, please return to the Philippine '
-  //             'Ports Authority, Brgy. Talao-Talao, Port Area, Lucena City 4301, Philippines.',
-  //             style: TextStyle(
-  //               color: Colors.black,
-  //               fontSize: 10.sp,
-  //             ),
-  //             textAlign: TextAlign.justify,
-  //           ),
-  //           // const Spacer(),
-
-  //           // Logos and contact info
-  //           Row(
-  //             crossAxisAlignment: CrossAxisAlignment.end,
-  //             children: [
-  //               Image.asset(
-  //                 'assets/images/ppalogo.png', // Make sure this exists
-  //                 width: 36.w,
-  //                 height: 36.w,
-  //               ),
-  //               SizedBox(width: 8.w),
-  //               Image.asset(
-  //                 'assets/images/logoWhite.png', // Consider using logoBlue.png for contrast
-  //                 width: 36.w,
-  //                 height: 36.w,
-  //               ),
-  //               const Spacer(),
-  //               Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.end,
-  //                 children: [
-  //                   Text(
-  //                     'For customer assistance, call',
-  //                     style: TextStyle(
-  //                       fontSize: 10.sp,
-  //                       color: Colors.black,
-  //                     ),
-  //                   ),
-  //                   Text(
-  //                     '09614505935',
-  //                     style: TextStyle(
-  //                       fontSize: 10.sp,
-  //                       fontWeight: FontWeight.bold,
-  //                       color: Colors.black,
-  //                     ),
-  //                   ),
-  //                   Text(
-  //                     'or visit www.ecbarko.com',
-  //                     style: TextStyle(
-  //                       fontSize: 10.sp,
-  //                       color: Colors.black,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               )
-  //             ],
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildCardBack() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.r),
       ),
       elevation: 6,
       child: Container(
-        height: 210.h,
-        padding: EdgeInsets.all(16.w),
+        height: screenHeight * 0.25, // Responsive height: 25% of screen height
+        padding: EdgeInsets.all(
+            screenWidth * 0.04), // Responsive padding: 4% of screen width
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
@@ -509,17 +334,20 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                         : 'No card linked',
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 24.sp,
+                      fontSize: screenWidth *
+                          0.055, // Responsive font size: 5.5% of screen width
                       fontWeight: FontWeight.w600,
                       letterSpacing: 1.2,
                     ),
                   ),
                   if (cardData != null && cardData!['cardLabel'] != null) ...[
-                    SizedBox(height: 4.h),
+                    SizedBox(
+                        height: screenHeight * 0.005), // Responsive spacing
                     Text(
                       cardData!['cardLabel'],
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: screenWidth *
+                            0.03, // Responsive font size: 3% of screen width
                         fontStyle: FontStyle.italic,
                         color: Colors.black,
                       ),
@@ -529,7 +357,7 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 12.h),
+            SizedBox(height: screenHeight * 0.015), // Responsive spacing
 
             // Terms and conditions text
             Expanded(
@@ -540,13 +368,14 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                 'Ports Authority, Brgy. Talao-Talao, Port Area, Lucena City 4301, Philippines.',
                 style: TextStyle(
                   color: Colors.black,
-                  fontSize: 13.sp,
+                  fontSize: screenWidth *
+                      0.032, // Responsive font size: 3.2% of screen width
                 ),
                 textAlign: TextAlign.justify,
               ),
             ),
 
-            SizedBox(height: 12.h),
+            SizedBox(height: screenHeight * 0.015), // Responsive spacing
 
             // Logos and contact info
             Row(
@@ -554,14 +383,16 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
               children: [
                 Image.asset(
                   'assets/images/ppalogo.png',
-                  width: 50.w,
-                  height: 50.w,
+                  width: screenWidth *
+                      0.12, // Responsive width: 12% of screen width
+                  height: screenWidth * 0.12,
                 ),
-                SizedBox(width: 8.w),
+                SizedBox(width: screenWidth * 0.02), // Responsive spacing
                 Image.asset(
                   'assets/images/logoWhite.png',
-                  width: 50.w,
-                  height: 50.w,
+                  width: screenWidth *
+                      0.12, // Responsive width: 12% of screen width
+                  height: screenWidth * 0.12,
                 ),
                 const Spacer(),
                 Column(
@@ -570,14 +401,16 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                     Text(
                       'For customer assistance, call',
                       style: TextStyle(
-                        fontSize: 10.sp,
+                        fontSize: screenWidth *
+                            0.025, // Responsive font size: 2.5% of screen width
                         color: Colors.black,
                       ),
                     ),
                     Text(
                       '09614505935',
                       style: TextStyle(
-                        fontSize: 10.sp,
+                        fontSize: screenWidth *
+                            0.025, // Responsive font size: 2.5% of screen width
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
@@ -585,7 +418,8 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                     Text(
                       'or visit www.ecbarko.com',
                       style: TextStyle(
-                        fontSize: 10.sp,
+                        fontSize: screenWidth *
+                            0.025, // Responsive font size: 2.5% of screen width
                         color: Colors.black,
                       ),
                     ),
@@ -610,6 +444,23 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Ec_BG_SKY_BLUE,
+      appBar: AppBar(
+        title: const Text(
+          'RFID Card',
+          style: TextStyle(
+              color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Ec_PRIMARY,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: widget.showBackButton
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
+      ),
       body: RefreshIndicator(
         onRefresh: refreshCard,
         child: SingleChildScrollView(
@@ -617,75 +468,19 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
           padding: EdgeInsets.only(bottom: 80.h),
           child: Column(
             children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 250.h,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF013986),
-                      borderRadius:
-                          BorderRadius.vertical(bottom: Radius.circular(40.r)),
-                    ),
-                    child: Center(
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'EcBarko',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28.sp,
-                                fontStyle: FontStyle.italic,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' Card',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28.sp,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (widget.showBackButton)
-                    Positioned(
-                      top: 20,
-                      left: 10,
-                      child: SafeArea(
-                        child: IconButton(
-                          icon:
-                              const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ),
-                    ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: -120.h,
-                    child: Container(
-                      width: double.infinity,
-                      margin:
-                          EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-                      child: _buildCardFlip(),
-                    ),
-                  ),
-                ],
+              Container(
+                width: double.infinity,
+                margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 8.h),
+                child: _buildCardFlip(),
               ),
-              SizedBox(height: 120.h),
+              SizedBox(
+                  height: 10.h), // Reduced spacing between card and actions
               _buildCardActionRow(context),
-              SizedBox(height: 20.h),
+              SizedBox(
+                  height:
+                      10.h), // Increased spacing between actions and history
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -721,7 +516,8 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 10.h),
+                    SizedBox(
+                        height: 20.h), // Increased spacing below history title
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -851,12 +647,6 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
             label: 'Link Card',
             onTap: () => _navigateTo(context, const LinkedCardScreen()),
           ),
-          // _buildCardActionButton(
-          //   context,
-          //   icon: Icons.history,
-          //   label: 'History',
-          //   onTap: () => _navigateTo(context, const HistoryScreen()),
-          // ),
         ],
       ),
     );

@@ -617,7 +617,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       onTap: () => _submit(),
                                       height: ScreenUtil().setHeight(45),
                                       width: ScreenUtil().screenWidth,
-                                      fontSize: ScreenUtil().setSp(16),
+                                      fontSize: 14,
                                       fontWeight: FontWeight.bold,
                                       buttonName: 'Submit',
                                     ),
@@ -632,7 +632,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           'You have an account?',
                                           style: TextStyle(
                                             color: Colors.black45,
-                                            fontSize: ScreenUtil().setSp(15),
+                                            fontSize: 13,
                                           ),
                                         ),
                                         GestureDetector(
@@ -643,7 +643,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                             ' Login here',
                                             style: TextStyle(
                                               color: Ec_DARK_PRIMARY,
-                                              fontSize: ScreenUtil().setSp(15),
+                                              fontSize: 13,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),

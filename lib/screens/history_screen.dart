@@ -69,6 +69,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  // Method to handle refresh
+  Future<void> _handleRefresh() async {
+    await _loadCardHistory();
+  }
+
   Widget _buildTransactionItem(Transaction transaction) {
     final isLoad = transaction.type == 'Load';
     final title =
@@ -217,9 +222,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             SizedBox(height: 10.h),
             Expanded(
-              child: ListView(
-                children:
-                    filteredTransactions.map(_buildTransactionItem).toList(),
+              child: RefreshIndicator(
+                onRefresh: _handleRefresh,
+                child: ListView(
+                  children:
+                      filteredTransactions.map(_buildTransactionItem).toList(),
+                ),
               ),
             ),
           ],

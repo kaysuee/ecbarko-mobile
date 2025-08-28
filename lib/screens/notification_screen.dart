@@ -1,257 +1,496 @@
 // notifications_screen.dart
-import 'package:EcBarko/models/notification_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:EcBarko/constants.dart';
+import '../models/notification_model.dart';
+import '../services/notification_service.dart';
+import '../utils/responsive_utils.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
-
-  @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+String getBaseUrl() {
+  //return 'https://ecbarko.onrender.com';
+  return 'https://ecbarko-db.onrender.com';
+  // return 'http://localhost:3000';
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  String selectedView = 'All';
-  String selectedFilterType = 'All';
+class NotificationScreen extends StatefulWidget {
+  const NotificationScreen({super.key});
 
-  final List<NotificationModel> allNotifications = [
-    NotificationModel(
-      type: "Load",
-      message: "₱100 Loaded to your card",
-      date: DateTime(2025, 5, 1, 10, 30),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "Use",
-      message: "You used ₱20 for Bus 042",
-      date: DateTime(2025, 5, 1, 9, 15),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "System",
-      message: "System maintenance at 11PM",
-      date: DateTime(2025, 4, 29, 23, 0),
-      isRead: true,
-    ),
-    NotificationModel(
-      type: "Load",
-      message: "Bonus ₱50 credited",
-      date: DateTime(2025, 4, 28, 14, 45),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "System",
-      message: "App updated to version 2.1.0",
-      date: DateTime(2025, 4, 25, 19, 5),
-      isRead: true,
-    ),
-    NotificationModel(
-      type: "Load",
-      message: "₱300 Loaded via GCash",
-      date: DateTime(2025, 4, 24, 15, 0),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "Use",
-      message: "You paid ₱18 for Ferry ride",
-      date: DateTime(2025, 4, 23, 6, 45),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "System",
-      message: "Scheduled downtime: May 5, 12AM–3AM",
-      date: DateTime(2025, 4, 21, 20, 0),
-      isRead: true,
-    ),
-    NotificationModel(
-      type: "Use",
-      message: "₱500 used for RORO Terminal Fee",
-      date: DateTime(2025, 4, 20, 9, 15),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "Load",
-      message: "₱500 loaded",
-      date: DateTime(2025, 4, 19, 11, 25),
-      isRead: true,
-    ),
-    NotificationModel(
-      type: "Use",
-      message: "₱22 used for PNR train fare",
-      date: DateTime(2025, 4, 18, 7, 55),
-      isRead: true,
-    ),
-    NotificationModel(
-      type: "System",
-      message: "You logged in on a new device",
-      date: DateTime(2025, 4, 17, 17, 10),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "Promo",
-      message: "Flash deal: 5% cashback on load today!",
-      date: DateTime(2025, 4, 16, 10, 0),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "Load",
-      message: "₱200 successfully reloaded",
-      date: DateTime(2025, 4, 15, 18, 20),
-      isRead: false,
-    ),
-    NotificationModel(
-      type: "Use",
-      message: "You used ₱40 for Night Bus service",
-      date: DateTime(2025, 4, 14, 22, 10),
-      isRead: true,
-    ),
-    NotificationModel(
-      type: "System",
-      message: "EcBarko Terms updated",
-      date: DateTime(2025, 4, 13, 14, 50),
-      isRead: true,
-    ),
-    NotificationModel(
-      type: "Promo",
-      message: "Congratulations! You earned a free ride.",
-      date: DateTime(2025, 4, 12, 9, 30),
-      isRead: false,
-    ),
-  ];
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen>
+    with ResponsiveWidgetMixin {
+  List<NotificationModel> notifications = [];
+  String selectedFilterType = 'All';
+  bool isLoading = true;
+  String? userId;
 
   List<NotificationModel> get filteredNotifications {
-    List<NotificationModel> filtered = allNotifications;
-
-    if (selectedFilterType != 'All') {
-      filtered = filtered.where((n) => n.type == selectedFilterType).toList();
-    }
-
-    if (selectedView == 'Unread') {
-      filtered = filtered.where((n) => !n.isRead).toList();
-    }
-
-    return filtered.reversed.toList();
+    if (selectedFilterType == 'All') return notifications.reversed.toList();
+    return notifications
+        .where((n) => n.type.toLowerCase() == selectedFilterType.toLowerCase())
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
-  Widget _buildNotificationItem(NotificationModel notif) {
-    final formattedDate = DateFormat('dd MMM yyyy\nhh:mm a').format(notif.date);
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
 
-    final Color badgeColor = {
-          'Load': Colors.green,
-          'Use': Colors.orange,
-          'System': Colors.blueGrey,
-          'Promo': Colors.purple,
-        }[notif.type] ??
-        Colors.grey;
+  Future<void> _loadNotifications() async {
+    setState(() {
+      isLoading = true;
+    });
 
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              notif.isRead = true;
-            });
-          },
-          child: Container(
-            padding: EdgeInsets.all(16.w),
-            decoration: BoxDecoration(
-              color: notif.isRead ? Colors.white : const Color(0xFFF1F9FF),
-              borderRadius: BorderRadius.circular(12.r),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserId = prefs.getString('userID');
+      final token = prefs.getString('token');
+
+      print('🔍 Debug: userID = $currentUserId');
+      print('🔍 Debug: token = ${token != null ? 'Present' : 'Missing'}');
+
+      if (currentUserId != null && token != null) {
+        setState(() {
+          userId = currentUserId;
+        });
+
+        print('🔍 Debug: Fetching notifications for user: $currentUserId');
+
+        final notificationsData =
+            await NotificationService.getUserNotifications(
+          userId: currentUserId,
+        );
+
+        print(
+            '🔍 Debug: Received ${notificationsData.length} notifications from API');
+
+        final List<NotificationModel> loadedNotifications = notificationsData
+            .map((json) => NotificationModel.fromJson(json))
+            .toList();
+
+        // Sort by creation date (newest first)
+        loadedNotifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+        setState(() {
+          notifications = loadedNotifications;
+          isLoading = false;
+        });
+
+        print(
+            '🔍 Debug: Successfully loaded ${notifications.length} notifications');
+      } else {
+        print('❌ Error: Missing userID or token');
+        if (currentUserId == null) {
+          print('❌ Error: userID is null');
+        }
+        if (token == null) {
+          print('❌ Error: token is null');
+        }
+
+        setState(() {
+          isLoading = false;
+        });
+
+        // Show error message to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                currentUserId == null
+                    ? 'User ID not found. Please log in again.'
+                    : 'Authentication token missing. Please log in again.',
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 48.w,
-                  height: 48.w,
-                  decoration: BoxDecoration(
-                    color: badgeColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Icon(
-                    _getNotificationIcon(notif.type),
-                    size: 24.sp,
-                    color: badgeColor,
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error loading notifications: $e');
+      setState(() {
+        isLoading = false;
+      });
+
+      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load notifications: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleRefresh() async {
+    await _loadNotifications();
+  }
+
+  Future<void> _markAsRead(NotificationModel notification) async {
+    if (notification.isRead) return;
+
+    try {
+      await NotificationService.markNotificationAsRead(
+        notificationId: notification.id,
+        userId: userId!,
+      );
+
+      // Update local state
+      setState(() {
+        final index = notifications.indexWhere((n) => n.id == notification.id);
+        if (index != -1) {
+          notifications[index] = NotificationModel(
+            id: notification.id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            userId: notification.userId,
+            additionalData: notification.additionalData,
+            createdAt: notification.createdAt,
+            isRead: true,
+          );
+        }
+      });
+    } catch (e) {
+      print('Error marking notification as read: $e');
+    }
+  }
+
+  Future<void> _deleteNotification(NotificationModel notification) async {
+    try {
+      await NotificationService.deleteNotification(
+        notificationId: notification.id,
+        userId: userId!,
+      );
+
+      // Remove from local state
+      setState(() {
+        notifications.removeWhere((n) => n.id == notification.id);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notification deleted'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error deleting notification: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to delete notification'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildNotificationItem(NotificationModel notification) {
+    final isUrgent = notification.isUrgent;
+    final title = notification.title;
+    final message = notification.message;
+    final timeAgo = notification.getTimeAgo();
+    final icon = notification.getIcon();
+    final type = notification.type;
+
+    return ResponsiveContainer(
+      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacingM),
+      padding: ResponsiveUtils.cardPadding,
+      decoration: BoxDecoration(
+        color: notification.isRead ? Colors.white : const Color(0xFFF1F9FF),
+        borderRadius: BorderRadius.circular(ResponsiveUtils.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: isUrgent
+            ? Border.all(color: Colors.red.withOpacity(0.3), width: 1)
+            : null,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 300;
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: isCompact ? 40.w : 48.w,
+                height: isCompact ? 40.w : 48.w,
+                decoration: BoxDecoration(
+                  color: _getNotificationColor(notification).withOpacity(0.1),
+                  borderRadius:
+                      BorderRadius.circular(ResponsiveUtils.cardRadius),
+                ),
+                child: Center(
+                  child: ResponsiveText(
+                    icon,
+                    fontSize: isCompact ? 20 : 24,
                   ),
                 ),
-                SizedBox(width: 16.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              notif.message,
-                              style: TextStyle(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w600,
-                                color: notif.isRead
-                                    ? Colors.black87
-                                    : Colors.black,
-                              ),
-                            ),
+              ),
+              SizedBox(width: ResponsiveUtils.spacingM),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ResponsiveText(
+                            title,
+                            fontSize: isCompact ? 14 : 15,
+                            fontWeight: FontWeight.w600,
+                            color: notification.isRead
+                                ? Colors.black87
+                                : Colors.black,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        if (isUrgent)
                           Container(
                             padding: EdgeInsets.symmetric(
-                                horizontal: 10.w, vertical: 4.h),
+                                horizontal: 6.w, vertical: 3.h),
                             decoration: BoxDecoration(
-                              color: badgeColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20.r),
+                              color: Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6.r),
                             ),
-                            child: Text(
-                              notif.type,
-                              style: TextStyle(
-                                fontSize: 11.sp,
-                                color: badgeColor,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            child: ResponsiveText(
+                              'URGENT',
+                              color: Colors.red,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                      ],
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacingS),
+                    ResponsiveText(
+                      message,
+                      fontSize: isCompact ? 13 : 14,
+                      color: Colors.grey[600],
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacingM),
+                    Row(
+                      children: [
+                        ResponsiveText(
+                          timeAgo,
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                        if (!notification.isRead) ...[
+                          SizedBox(width: ResponsiveUtils.spacingM),
+                          Container(
+                            width: 6.w,
+                            height: 6.w,
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
                             ),
                           ),
                         ],
-                      ),
-                      SizedBox(height: 6.h),
-                      Text(
-                        formattedDate,
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ),
-        SizedBox(height: 12.h),
-      ],
+              ),
+              PopupMenuButton<String>(
+                onSelected: (value) {
+                  switch (value) {
+                    case 'mark_read':
+                      if (!notification.isRead) {
+                        _markAsRead(notification);
+                      }
+                      break;
+                    case 'delete':
+                      _deleteNotification(notification);
+                      break;
+                  }
+                },
+                itemBuilder: (context) => [
+                  if (!notification.isRead)
+                    PopupMenuItem(
+                      value: 'mark_read',
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle_outline,
+                              size: ResponsiveUtils.iconSizeM),
+                          SizedBox(width: ResponsiveUtils.spacingM),
+                          ResponsiveText('Mark as Read'),
+                        ],
+                      ),
+                    ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline,
+                            color: Colors.red, size: ResponsiveUtils.iconSizeM),
+                        SizedBox(width: ResponsiveUtils.spacingM),
+                        ResponsiveText('Delete', color: Colors.red),
+                      ],
+                    ),
+                  ),
+                ],
+                child: Icon(
+                  Icons.more_vert,
+                  color: Colors.grey[600],
+                  size: ResponsiveUtils.iconSizeM,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  IconData _getNotificationIcon(String type) {
-    switch (type) {
-      case 'Load':
-        return Icons.account_balance_wallet;
-      case 'Use':
-        return Icons.directions_bus;
-      case 'System':
-        return Icons.settings;
-      case 'Promo':
-        return Icons.local_offer;
+  Color _getNotificationColor(NotificationModel notification) {
+    switch (notification.getColor()) {
+      case 'blue':
+        return Colors.blue;
+      case 'red':
+        return Colors.red;
+      case 'green':
+        return Colors.green;
+      case 'purple':
+        return Colors.purple;
+      case 'orange':
+        return Colors.orange;
       default:
-        return Icons.notifications;
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Ec_BG_SKY_BLUE,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+            size: ResponsiveUtils.iconSizeM,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: ResponsiveText(
+          'Notifications',
+          fontSize: ResponsiveUtils.fontSizeXXXL,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        centerTitle: true,
+        backgroundColor: Ec_PRIMARY,
+        elevation: 0,
+        iconTheme: IconThemeData(
+          color: Colors.white,
+          size: ResponsiveUtils.iconSizeM,
+        ),
+        actions: [
+          if (notifications.isNotEmpty)
+            IconButton(
+              icon: Icon(
+                Icons.clear_all,
+                color: Colors.white,
+                size: ResponsiveUtils.iconSizeM,
+              ),
+              onPressed: () => _showClearAllDialog(),
+            ),
+          // Test button for debugging
+          IconButton(
+            icon: Icon(
+              Icons.bug_report,
+              color: Colors.white,
+              size: ResponsiveUtils.iconSizeM,
+            ),
+            onPressed: () => _createTestNotification(),
+          ),
+        ],
+      ),
+      body: ResponsiveContainer(
+        padding: ResponsiveUtils.screenPaddingLarge,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: Ec_DARK_PRIMARY),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: selectedFilterType,
+                  isExpanded: true,
+                  items: ['All', 'Order', 'Payment', 'System']
+                      .map((value) => DropdownMenuItem<String>(
+                            value: value,
+                            child: ResponsiveText(
+                              _getFilterDisplayName(value),
+                              fontSize: ResponsiveUtils.fontSizeM,
+                            ),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedFilterType = value!;
+                    });
+                  },
+                ),
+              ),
+            ),
+            SizedBox(height: ResponsiveUtils.spacingM),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _handleRefresh,
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : filteredNotifications.isEmpty
+                        ? _buildEmptyState()
+                        : ListView(
+                            children: filteredNotifications
+                                .map(_buildNotificationItem)
+                                .toList(),
+                          ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getFilterDisplayName(String filterType) {
+    switch (filterType) {
+      case 'Order':
+        return 'Order';
+      case 'Payment':
+        return 'Payment';
+      case 'System':
+        return 'System';
+      default:
+        return filterType;
     }
   }
 
@@ -261,639 +500,132 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.notifications_off_outlined,
-            size: 80.sp,
+            Icons.notifications_none,
+            size: ResponsiveUtils.iconSizeXL * 1.67,
             color: Colors.grey[400],
           ),
-          SizedBox(height: 16.h),
-          Text(
-            'No notifications',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'You\'re all caught up!',
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Ec_BG_SKY_BLUE,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontFamily: 'Arial',
+          SizedBox(height: ResponsiveUtils.spacingM),
+          ResponsiveText(
+            'No notifications yet',
+            fontSize: ResponsiveUtils.fontSizeXXL,
             fontWeight: FontWeight.bold,
+            color: Colors.grey[600],
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: Ec_PRIMARY,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          if (filteredNotifications.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.white),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Clear All Notifications'),
-                    content: const Text(
-                        'Are you sure you want to clear all notifications?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            allNotifications.clear();
-                          });
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Clear'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+          SizedBox(height: ResponsiveUtils.spacingM),
+          ResponsiveText(
+            'You\'ll see notifications here when you have updates',
+            fontSize: ResponsiveUtils.fontSizeL,
+            color: Colors.grey[500],
+            textAlign: TextAlign.center,
+          ),
         ],
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      _buildFilterButton('All'),
-                      SizedBox(width: 16.w),
-                      _buildFilterButton('Unread'),
-                    ],
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedFilterType,
-                        items: ['All', 'Load', 'Use', 'System', 'Promo']
-                            .map((value) => DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(
-                                    value,
-                                    style: TextStyle(
-                                      fontSize: 14.sp,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedFilterType = value!;
-                          });
-                        },
-                        icon: Icon(Icons.arrow_drop_down, color: Ec_PRIMARY),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20.h),
-            Expanded(
-              child: filteredNotifications.isEmpty
-                  ? _buildEmptyState()
-                  : ListView(
-                      children: filteredNotifications
-                          .map(_buildNotificationItem)
-                          .toList(),
-                    ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildFilterButton(String text) {
-    final isSelected = selectedView == text;
-    return GestureDetector(
-      onTap: () => setState(() => selectedView = text),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        decoration: BoxDecoration(
-          color: isSelected ? Ec_PRIMARY.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Ec_PRIMARY : Colors.black54,
+  void _showClearAllDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Notifications'),
+        content:
+            const Text('Are you sure you want to delete all notifications?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-        ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _clearAllNotifications();
+            },
+            child:
+                const Text('Clear All', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _clearAllNotifications() async {
+    try {
+      // Delete all notifications from the backend
+      for (final notification in notifications) {
+        await NotificationService.deleteNotification(
+          notificationId: notification.id,
+          userId: userId!,
+        );
+      }
+
+      // Clear local state
+      setState(() {
+        notifications.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All notifications cleared'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error clearing notifications: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to clear some notifications'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Test method to create a sample notification
+  Future<void> _createTestNotification() async {
+    try {
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User ID not available. Please log in again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      print('🔍 Creating test notification for user: $userId');
+
+      await NotificationService.createNotification(
+        type: 'test',
+        title: 'Test Notification',
+        message: 'This is a test notification to verify the system is working.',
+        userId: userId!,
+        additionalData: {
+          'test': true,
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+
+      print('🔍 Test notification created successfully');
+
+      // Refresh the notifications list
+      await _loadNotifications();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Test notification created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('❌ Error creating test notification: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create test notification: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
-
-// // notifications_screen.dart
-// import 'package:EcBarko/models/notification_model.dart';
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:intl/intl.dart';
-// import 'package:EcBarko/constants.dart';
-
-// class NotificationsScreen extends StatefulWidget {
-//   const NotificationsScreen({super.key});
-
-//   @override
-//   State<NotificationsScreen> createState() => _NotificationsScreenState();
-// }
-
-// class _NotificationsScreenState extends State<NotificationsScreen> {
-//   String selectedView = 'All';
-//   String selectedFilterType = 'All';
-
-//   final List<NotificationModel> allNotifications = [
-//     NotificationModel(
-//       type: "Load",
-//       message: "₱100 Loaded to your card",
-//       date: DateTime(2025, 5, 1, 10, 30),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "Use",
-//       message: "You used ₱20 for Bus 042",
-//       date: DateTime(2025, 5, 1, 9, 15),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "System",
-//       message: "System maintenance at 11PM",
-//       date: DateTime(2025, 4, 29, 23, 0),
-//       isRead: true,
-//     ),
-//     NotificationModel(
-//       type: "Load",
-//       message: "Bonus ₱50 credited",
-//       date: DateTime(2025, 4, 28, 14, 45),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "Use",
-//       message: "You paid ₱15 for Jeepney 305",
-//       date: DateTime(2025, 4, 27, 8, 10),
-//       isRead: true,
-//     ),
-//     NotificationModel(
-//       type: "Promo",
-//       message: "New promo: Load ₱200, get ₱20 free!",
-//       date: DateTime(2025, 4, 26, 12, 30),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "System",
-//       message: "App updated to version 2.1.0",
-//       date: DateTime(2025, 4, 25, 19, 5),
-//       isRead: true,
-//     ),
-//     NotificationModel(
-//       type: "Load",
-//       message: "₱300 Loaded via GCash",
-//       date: DateTime(2025, 4, 24, 15, 0),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "Use",
-//       message: "You paid ₱18 for Ferry ride",
-//       date: DateTime(2025, 4, 23, 6, 45),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "Promo",
-//       message: "Refer a friend and earn ₱25!",
-//       date: DateTime(2025, 4, 22, 13, 30),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "System",
-//       message: "Scheduled downtime: May 5, 12AM–3AM",
-//       date: DateTime(2025, 4, 21, 20, 0),
-//       isRead: true,
-//     ),
-//     NotificationModel(
-//       type: "Use",
-//       message: "₱50 used for Van Terminal ride",
-//       date: DateTime(2025, 4, 20, 9, 15),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "Load",
-//       message: "₱500 loaded from PayMaya",
-//       date: DateTime(2025, 4, 19, 11, 25),
-//       isRead: true,
-//     ),
-//     NotificationModel(
-//       type: "Use",
-//       message: "₱22 used for PNR train fare",
-//       date: DateTime(2025, 4, 18, 7, 55),
-//       isRead: true,
-//     ),
-//     NotificationModel(
-//       type: "System",
-//       message: "You logged in on a new device",
-//       date: DateTime(2025, 4, 17, 17, 10),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "Promo",
-//       message: "Flash deal: 5% cashback on load today!",
-//       date: DateTime(2025, 4, 16, 10, 0),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "Load",
-//       message: "₱200 successfully reloaded",
-//       date: DateTime(2025, 4, 15, 18, 20),
-//       isRead: false,
-//     ),
-//     NotificationModel(
-//       type: "Use",
-//       message: "You used ₱40 for Night Bus service",
-//       date: DateTime(2025, 4, 14, 22, 10),
-//       isRead: true,
-//     ),
-//     NotificationModel(
-//       type: "System",
-//       message: "EcBarko Terms updated",
-//       date: DateTime(2025, 4, 13, 14, 50),
-//       isRead: true,
-//     ),
-//     NotificationModel(
-//       type: "Promo",
-//       message: "Congratulations! You earned a free ride.",
-//       date: DateTime(2025, 4, 12, 9, 30),
-//       isRead: false,
-//     ),
-//   ];
-
-//   List<NotificationModel> get filteredNotifications {
-//     List<NotificationModel> filtered = allNotifications;
-
-//     if (selectedFilterType != 'All') {
-//       filtered = filtered.where((n) => n.type == selectedFilterType).toList();
-//     }
-
-//     if (selectedView == 'Unread') {
-//       filtered = filtered.where((n) => !n.isRead).toList();
-//     }
-
-//     return filtered.reversed.toList();
-//   }
-
-//   Widget _buildNotificationItem(NotificationModel notif) {
-//     final formattedDate = DateFormat('dd MMM yyyy\nhh:mm a').format(notif.date);
-
-//     final Color badgeColor = {
-//           'Load': Colors.green,
-//           'Use': Colors.orange,
-//           'System': Colors.blueGrey,
-//           'Promo': Colors.purple,
-//         }[notif.type] ??
-//         Colors.grey;
-
-//     return Column(
-//       children: [
-//         GestureDetector(
-//           onTap: () {
-//             setState(() {
-//               notif.isRead = true;
-//             });
-//           },
-//           child: Container(
-//             padding: EdgeInsets.all(16.w),
-//             decoration: BoxDecoration(
-//               color: notif.isRead ? Colors.white : const Color(0xFFF1F9FF),
-//               borderRadius: BorderRadius.circular(12.r),
-//               boxShadow: [
-//                 BoxShadow(
-//                   color: Colors.black.withOpacity(0.05),
-//                   blurRadius: 8,
-//                   offset: const Offset(0, 2),
-//                 ),
-//               ],
-//             ),
-//             child: Row(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Container(
-//                   width: 48.w,
-//                   height: 48.w,
-//                   decoration: BoxDecoration(
-//                     color: badgeColor.withOpacity(0.1),
-//                     borderRadius: BorderRadius.circular(12.r),
-//                   ),
-//                   child: Icon(
-//                     _getNotificationIcon(notif.type),
-//                     size: 24.sp,
-//                     color: badgeColor,
-//                   ),
-//                 ),
-//                 SizedBox(width: 16.w),
-//                 Expanded(
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Row(
-//                         children: [
-//                           Expanded(
-//                             child: Text(
-//                               notif.message,
-//                               style: TextStyle(
-//                                 fontSize: 15.sp,
-//                                 fontWeight: FontWeight.w600,
-//                                 color: notif.isRead ? Colors.black87 : Colors.black,
-//                               ),
-//                             ),
-//                           ),
-//                           Container(
-//                             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-//                             decoration: BoxDecoration(
-//                               color: badgeColor.withOpacity(0.1),
-//                               borderRadius: BorderRadius.circular(20.r),
-//                             ),
-//                             child: Text(
-//                               notif.type,
-//                               style: TextStyle(
-//                                 fontSize: 11.sp,
-//                                 color: badgeColor,
-//                                 fontWeight: FontWeight.w600,
-//                               ),
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                       SizedBox(height: 6.h),
-//                       Text(
-//                         formattedDate,
-//                         style: TextStyle(
-//                           fontSize: 12.sp,
-//                           color: Colors.grey[600],
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//         SizedBox(height: 12.h),
-//       ],
-//     );
-//   }
-
-//   IconData _getNotificationIcon(String type) {
-//     switch (type) {
-//       case 'Load':
-//         return Icons.account_balance_wallet;
-//       case 'Use':
-//         return Icons.directions_bus;
-//       case 'System':
-//         return Icons.settings;
-//       case 'Promo':
-//         return Icons.local_offer;
-//       default:
-//         return Icons.notifications;
-//     }
-//   }
-
-//   Widget _buildEmptyState() {
-//     return Center(
-//       child: Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         children: [
-//           Icon(
-//             Icons.notifications_off_outlined,
-//             size: 80.sp,
-//             color: Colors.grey[400],
-//           ),
-//           SizedBox(height: 16.h),
-//           Text(
-//             'No notifications',
-//             style: TextStyle(
-//               fontSize: 18.sp,
-//               fontWeight: FontWeight.w600,
-//               color: Colors.grey[600],
-//             ),
-//           ),
-//           SizedBox(height: 8.h),
-//           Text(
-//             'You\'re all caught up!',
-//             style: TextStyle(
-//               fontSize: 14.sp,
-//               color: Colors.grey[500],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Ec_BG_SKY_BLUE,
-//       appBar: AppBar(
-//         leading: IconButton(
-//           icon: const Icon(Icons.arrow_back, color: Colors.white),
-//           onPressed: () => Navigator.pop(context),
-//         ),
-//         title: const Text(
-//           'Notifications',
-//           style: TextStyle(
-//             color: Colors.white,
-//             fontSize: 24,
-//             fontFamily: 'Arial',
-//             fontWeight: FontWeight.bold,
-//           ),
-//         ),
-//         centerTitle: true,
-//         backgroundColor: Ec_PRIMARY,
-//         elevation: 0,
-//         iconTheme: const IconThemeData(color: Colors.white),
-//         actions: [
-//           if (filteredNotifications.isNotEmpty)
-//             IconButton(
-//               icon: const Icon(Icons.delete_outline, color: Colors.white),
-//               onPressed: () {
-//                 showDialog(
-//                   context: context,
-//                   builder: (context) => AlertDialog(
-//                     title: const Text('Clear All Notifications'),
-//                     content: const Text('Are you sure you want to clear all notifications?'),
-//                     actions: [
-//                       TextButton(
-//                         onPressed: () => Navigator.pop(context),
-//                         child: const Text('Cancel'),
-//                       ),
-//                       TextButton(
-//                         onPressed: () {
-//                           setState(() {
-//                             allNotifications.clear();
-//                           });
-//                           Navigator.pop(context);
-//                         },
-//                         child: const Text('Clear'),
-//                       ),
-//                     ],
-//                   ),
-//                 );
-//               },
-//             ),
-//         ],
-//       ),
-//       body: Padding(
-//         padding: EdgeInsets.all(20.w),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Container(
-//               padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-//               decoration: BoxDecoration(
-//                 color: Colors.white,
-//                 borderRadius: BorderRadius.circular(12.r),
-//                 boxShadow: [
-//                   BoxShadow(
-//                     color: Colors.black.withOpacity(0.05),
-//                     blurRadius: 8,
-//                     offset: const Offset(0, 2),
-//                   ),
-//                 ],
-//               ),
-//               child: Row(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   Row(
-//                     children: [
-//                       _buildFilterButton('All'),
-//                       SizedBox(width: 16.w),
-//                       _buildFilterButton('Unread'),
-//                     ],
-//                   ),
-//                   Container(
-//                     padding: EdgeInsets.symmetric(horizontal: 12.w),
-//                     decoration: BoxDecoration(
-//                       color: Colors.grey[100],
-//                       borderRadius: BorderRadius.circular(8.r),
-//                     ),
-//                     child: DropdownButtonHideUnderline(
-//                       child: DropdownButton<String>(
-//                         value: selectedFilterType,
-//                         items: ['All', 'Load', 'Use', 'System', 'Promo']
-//                             .map((value) => DropdownMenuItem<String>(
-//                                   value: value,
-//                                   child: Text(
-//                                     value,
-//                                     style: TextStyle(
-//                                       fontSize: 14.sp,
-//                                       color: Colors.black87,
-//                                     ),
-//                                   ),
-//                                 ))
-//                             .toList(),
-//                         onChanged: (value) {
-//                           setState(() {
-//                             selectedFilterType = value!;
-//                           });
-//                         },
-//                         icon: Icon(Icons.arrow_drop_down, color: Ec_PRIMARY),
-//                       ),
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//             SizedBox(height: 20.h),
-//             Expanded(
-//               child: filteredNotifications.isEmpty
-//                   ? _buildEmptyState()
-//                   : ListView(
-//                       children: filteredNotifications
-//                           .map(_buildNotificationItem)
-//                           .toList(),
-//                     ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildFilterButton(String text) {
-//     final isSelected = selectedView == text;
-//     return GestureDetector(
-//       onTap: () => setState(() => selectedView = text),
-//       child: Container(
-//         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-//         decoration: BoxDecoration(
-//           color: isSelected ? Ec_PRIMARY.withOpacity(0.1) : Colors.transparent,
-//           borderRadius: BorderRadius.circular(20.r),
-//         ),
-//         child: Text(
-//           text,
-//           style: TextStyle(
-//             fontSize: 16.sp,
-//             fontWeight: FontWeight.w600,
-//             color: isSelected ? Ec_PRIMARY : Colors.black54,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }

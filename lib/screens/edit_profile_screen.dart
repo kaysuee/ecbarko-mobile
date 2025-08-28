@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:EcBarko/constants.dart';
-import 'dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'dart:io';
+import '../services/notification_service.dart';
 
 Map<String, dynamic>? userData;
 
@@ -29,15 +28,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final phoneController = TextEditingController();
-  final passwordController = TextEditingController();
   final birthdateController = TextEditingController();
 
   String selectedCardType = 'Type 1';
   final List<String> cardTypes = ['Type 1', 'Type 2', 'Type 3', 'Type 4'];
 
   String? profileImage;
-
-  bool _obscurePassword = true;
+  bool isEditMode = false; // New: Track edit mode
 
   @override
   void initState() {
@@ -82,7 +79,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
     final birthdate = birthdateController.text.trim();
-    final password = passwordController.text.trim();
 
     // ✅ Local null/empty field validation
     if (name.isEmpty || email.isEmpty || phone.isEmpty) {
@@ -116,7 +112,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'email': email,
       'phone': phone,
       'birthdate': birthdate,
-      'password': password,
     });
 
     try {
@@ -131,6 +126,51 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final responseBody = jsonDecode(response.body);
       final errorMessage = responseBody['message'] ?? 'Unknown error';
       if (response.statusCode == 200) {
+        // Send notifications for each updated field
+        final prefs = await SharedPreferences.getInstance();
+        final userId = prefs.getString('userID');
+
+        if (userId != null) {
+          // Check which fields were updated and send notifications
+          if (userData != null) {
+            if (name != userData!['name']) {
+              await NotificationService.notifyProfileUpdate(
+                userId: userId,
+                updatedField: 'name',
+                oldValue: userData!['name'],
+                newValue: name,
+              );
+            }
+
+            if (email != userData!['email']) {
+              await NotificationService.notifyProfileUpdate(
+                userId: userId,
+                updatedField: 'email',
+                oldValue: userData!['email'],
+                newValue: email,
+              );
+            }
+
+            if (phone != userData!['phone']) {
+              await NotificationService.notifyProfileUpdate(
+                userId: userId,
+                updatedField: 'phone number',
+                oldValue: userData!['phone'],
+                newValue: phone,
+              );
+            }
+
+            if (birthdate != userData!['birthdate']) {
+              await NotificationService.notifyProfileUpdate(
+                userId: userId,
+                updatedField: 'birthdate',
+                oldValue: userData!['birthdate'],
+                newValue: birthdate,
+              );
+            }
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully!'),
@@ -158,33 +198,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final source = await showModalBottomSheet<ImageSource?>(
-      context: context,
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.photo_camera),
-            title: const Text("Take a photo"),
-            onTap: () => Navigator.pop(context, ImageSource.camera),
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library),
-            title: const Text("Choose from gallery"),
-            onTap: () => Navigator.pop(context, ImageSource.gallery),
-          ),
-        ],
-      ),
-    );
+    print("Image picker tapped!"); // Debug print
+    try {
+      final picker = ImagePicker();
+      final source = await showModalBottomSheet<ImageSource?>(
+        context: context,
+        builder: (_) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text("Take a photo"),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text("Choose from gallery"),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      );
 
-    if (source != null) {
-      final image = await picker.pickImage(source: source);
-      if (image != null) {
-        setState(() {
-          profileImage = image.path; // ✅ Update local file path
-        });
+      if (source != null) {
+        print("Source selected: $source"); // Debug print
+        final image = await picker.pickImage(source: source);
+        if (image != null) {
+          print("Image selected: ${image.path}"); // Debug print
+          setState(() {
+            profileImage = image.path; // ✅ Update local file path
+          });
+        } else {
+          print("No image selected"); // Debug print
+        }
+      } else {
+        print("No source selected"); // Debug print
       }
+    } catch (e) {
+      print("Error picking image: $e"); // Debug print
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error picking image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -202,7 +259,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   bool _hasUnsavedChanges() {
-    return passwordController.text.isNotEmpty;
+    if (userData == null) return false;
+
+    return nameController.text != userData!['name'] ||
+        emailController.text != userData!['email'] ||
+        phoneController.text != userData!['phone'] ||
+        birthdateController.text != userData!['birthdate'];
   }
 
   Future<bool> _onWillPop() async {
@@ -229,8 +291,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
+        if (await _onWillPop()) {
+          if (context.mounted) {
+            Navigator.pop(context);
+          }
+        }
+      },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -242,25 +313,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               }
             },
           ),
-          title: const Text('Edit Profile',
+          title: const Text('Profile',
               style: TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
-                  fontFamily: 'Arial',
+                  fontSize: 20,
                   fontWeight: FontWeight.bold)),
           centerTitle: true,
-          backgroundColor: Ec_PRIMARY,
+          backgroundColor: Ec_DARK_PRIMARY,
           elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            IconButton(
+              icon: Icon(
+                isEditMode ? Icons.close : Icons.edit,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                setState(() {
+                  isEditMode = !isEditMode;
+                  if (!isEditMode) {
+                    // Reset to original values when exiting edit mode
+                    _loadUserData();
+                  }
+                });
+              },
+            ),
+          ],
         ),
         backgroundColor: Ec_BG_SKY_BLUE,
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Form(
               key: _formKey,
               child: Column(
                 children: [
+                  // Profile Header Section
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -314,13 +401,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               Positioned(
                                 bottom: 0,
                                 right: 0,
-                                child: GestureDetector(
-                                  onTap: _pickImage,
-                                  child: CircleAvatar(
-                                    radius: 15,
-                                    backgroundColor: Colors.grey[300],
-                                    child: const Icon(Icons.camera_alt,
-                                        size: 16, color: Colors.black),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: isEditMode ? _pickImage : null,
+                                    borderRadius: BorderRadius.circular(15),
+                                    child: Container(
+                                      width: 30,
+                                      height: 30,
+                                      decoration: BoxDecoration(
+                                        color: isEditMode
+                                            ? Colors.grey[300]
+                                            : Colors.grey[100],
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.camera_alt,
+                                        size: 16,
+                                        color: isEditMode
+                                            ? Colors.black
+                                            : Colors.grey[400],
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -330,104 +432,172 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30), // NAME
 
-                  // ✅ NEW: Display Name Text Below Image
-                  Text(
-                    userData?['name'] ?? 'Loading...',
-                    style: const TextStyle(
-                        fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  // const SizedBox(height: 10),
-                  Chip(
-                    backgroundColor: Ec_PRIMARY,
-                    label: Text(
-                      'User ID: #${userData?['id'] ?? '...'}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  _buildTextField('Name', Icons.person, nameController),
-                  const SizedBox(height: 10),
-                  _buildTextField('Email', Icons.email, emailController,
-                      validator: (val) =>
-                          val!.contains('@') ? null : 'Enter valid email'),
-                  const SizedBox(height: 10),
-                  _buildTextField('Phone Number', Icons.phone, phoneController,
-                      validator: (val) => val!.length >= 10
-                          ? null
-                          : 'Enter valid phone number'),
-                  const SizedBox(height: 10),
-                  _buildTextField(
-                    'Birthdate',
-                    Icons.calendar_today,
-                    birthdateController,
-                    readOnly: true,
-                    onTap: _selectBirthdate,
-                    validator: (val) => val == null || val.isEmpty
-                        ? 'Select your birthdate'
-                        : null,
-                  ),
-                  const SizedBox(height: 10),
-                  _buildTextField(
-                    'Password',
-                    Icons.lock,
-                    passwordController,
-                    obscureText: _obscurePassword,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.grey,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Ec_DARK_PRIMARY,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25)),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Confirm Changes"),
-                            content: const Text(
-                                "Are you sure you want to save the changes?"),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text("Cancel"),
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: Ec_DARK_PRIMARY),
-                                onPressed: () async {
-                                  Navigator.pop(context);
-                                  await _updateProfile(); // ✅ Call the backend update function
-                                },
-                                child: const Text("Save",
-                                    style: TextStyle(color: Colors.white)),
-                              )
-                            ],
+                  // User Info Section
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Column(
+                      children: [
+                        Text(
+                          userData?['name'] ?? 'Loading...',
+                          style: const TextStyle(
+                              fontSize: 26, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 5),
+                        Chip(
+                          backgroundColor: Ec_PRIMARY,
+                          label: Text(
+                            'User ID: #${userData?['id'] ?? '...'}',
+                            style: const TextStyle(color: Colors.white),
                           ),
-                        );
-                      }
-                    },
-                    child: const Text('Save',
-                        style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
                   ),
+
+                  const SizedBox(height: 2),
+
+                  // Form Fields Section
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Section Header
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.edit_note,
+                              color: Ec_DARK_PRIMARY,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Personal Information',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Ec_DARK_PRIMARY,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Name Field
+                        _buildTextField('Name', Icons.person, nameController,
+                            readOnly: !isEditMode),
+                        const SizedBox(height: 20),
+
+                        // Email Field
+                        _buildTextField('Email', Icons.email, emailController,
+                            readOnly: !isEditMode,
+                            validator: (val) => val!.contains('@')
+                                ? null
+                                : 'Enter valid email'),
+                        const SizedBox(height: 20),
+
+                        // Phone Field
+                        _buildTextField(
+                            'Phone Number', Icons.phone, phoneController,
+                            readOnly: !isEditMode,
+                            validator: (val) => val!.length >= 10
+                                ? null
+                                : 'Enter valid phone number'),
+                        const SizedBox(height: 20),
+
+                        // Birthdate Field
+                        _buildTextField(
+                          'Birthdate',
+                          Icons.calendar_today,
+                          birthdateController,
+                          readOnly: true,
+                          onTap: isEditMode ? _selectBirthdate : null,
+                          validator: (val) => val == null || val.isEmpty
+                              ? 'Select your birthdate'
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Save Button
+                  if (isEditMode)
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Ec_DARK_PRIMARY.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Ec_DARK_PRIMARY,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(28)),
+                          elevation: 0,
+                        ),
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text("Confirm Changes"),
+                                content: const Text(
+                                    "Are you sure you want to save the changes?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text("Cancel"),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: Ec_DARK_PRIMARY),
+                                    onPressed: () async {
+                                      Navigator.pop(context);
+                                      await _updateProfile(); // ✅ Call the backend update function
+                                    },
+                                    child: const Text("Save",
+                                        style: TextStyle(color: Colors.white)),
+                                  )
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Bottom padding to ensure content doesn't get cut off
+                  // const SizedBox(height: 5), //BOTTOM PADDING
                 ],
               ),
             ),
@@ -453,46 +623,76 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       readOnly: readOnly,
       onTap: onTap,
       validator: validator,
+      style: TextStyle(
+        fontSize: 16,
+        color: readOnly ? Colors.grey[600] : Colors.black87,
+      ),
       decoration: InputDecoration(
         labelText: label,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        prefixIcon: Icon(icon),
-        suffixIcon: suffixIcon ??
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () => controller.clear(),
-            ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
-  }
-
-  Widget _buildDropdownField(String label, List<String> items, String value,
-      ValueChanged<String> onChanged) {
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Ec_DARK_PRIMARY,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          iconSize: 0,
-          dropdownColor: Ec_DARK_PRIMARY,
-          style: const TextStyle(color: Colors.white),
-          onChanged: (newValue) => onChanged(newValue!),
-          items: items
-              .map((item) => DropdownMenuItem<String>(
-                    value: item,
-                    child: Text("$label: $item",
-                        style: const TextStyle(color: Colors.white)),
-                  ))
-              .toList(),
+        labelStyle: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
         ),
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        prefixIcon: Icon(
+          icon,
+          color: readOnly ? Colors.grey[500] : Ec_DARK_PRIMARY,
+          size: 22,
+        ),
+        suffixIcon: suffixIcon ??
+            (isEditMode
+                ? IconButton(
+                    icon: Icon(
+                      Icons.clear,
+                      color: Colors.grey[500],
+                      size: 20,
+                    ),
+                    onPressed: () => controller.clear(),
+                  )
+                : null),
+        filled: true,
+        fillColor: readOnly ? Colors.grey[50] : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Colors.grey[300]!,
+            width: 1.5,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Colors.grey[300]!,
+            width: 1.5,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Ec_DARK_PRIMARY,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Colors.red[400]!,
+            width: 1.5,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: Colors.red[400]!,
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 18,
+        ),
+        isDense: false,
       ),
     );
   }
