@@ -367,6 +367,40 @@ class NotificationService {
     }
   }
 
+  // Get archived notifications (notification history)
+  static Future<List<Map<String, dynamic>>> getArchivedNotifications({
+    required String userId,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('No token available for fetching archived notifications');
+        return [];
+      }
+
+      final response = await http.get(
+        Uri.parse('${getBaseUrl()}/api/notifications/$userId/archived'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> notifications = jsonDecode(response.body);
+        return notifications.cast<Map<String, dynamic>>();
+      } else {
+        print('Failed to fetch archived notifications: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching archived notifications: $e');
+      return [];
+    }
+  }
+
   // Get unread notification count
   static Future<int> getUnreadNotificationCount({
     required String userId,
@@ -379,6 +413,42 @@ class NotificationService {
     } catch (e) {
       print('Error getting unread notification count: $e');
       return 0;
+    }
+  }
+
+  // Archive notification (mark as archived instead of deleting)
+  static Future<void> archiveNotification({
+    required String notificationId,
+    required String userId,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('No token available for archiving notification');
+        return;
+      }
+
+      final response = await http.put(
+        Uri.parse('${getBaseUrl()}/api/notifications/$notificationId/archive'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'isArchived': true,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Notification archived: $notificationId');
+      } else {
+        print('Failed to archive notification: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error archiving notification: $e');
     }
   }
 

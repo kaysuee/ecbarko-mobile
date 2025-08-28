@@ -1026,7 +1026,10 @@ class _DashboardScreenState extends State<DashboardScreen>
             context,
             icon: Icons.add_circle_outline,
             label: 'Load',
-            onTap: () => _navigateTo(context, const BuyLoadScreen()),
+            onTap: () {
+              print('🔄 Load button tapped!');
+              _navigateTo(context, const BuyLoadScreen());
+            },
           ),
           _buildCardActionButton(
             context,
@@ -2363,6 +2366,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   void _navigateTo(BuildContext context, Widget screen) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    print('🔍 Navigating to: ${screen.runtimeType}');
+    try {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+      print('✅ Navigation successful');
+    } catch (e) {
+      print('❌ Navigation failed: $e');
+    }
   }
 }

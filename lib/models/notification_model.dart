@@ -8,6 +8,7 @@ class NotificationModel {
   final Map<String, dynamic> additionalData;
   final DateTime createdAt;
   final bool isRead;
+  final bool isArchived;
 
   NotificationModel({
     required this.id,
@@ -18,11 +19,12 @@ class NotificationModel {
     required this.additionalData,
     required this.createdAt,
     required this.isRead,
+    this.isArchived = false,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
-      id: json['id'] ?? '',
+      id: json['id'] ?? json['_id'] ?? '',
       type: json['type'] ?? '',
       title: json['title'] ?? '',
       message: json['message'] ?? '',
@@ -30,6 +32,7 @@ class NotificationModel {
       additionalData: json['additionalData'] ?? {},
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       isRead: json['isRead'] ?? false,
+      isArchived: json['isArchived'] ?? false,
     );
   }
 
@@ -43,6 +46,7 @@ class NotificationModel {
       'additionalData': additionalData,
       'createdAt': createdAt.toIso8601String(),
       'isRead': isRead,
+      'isArchived': isArchived,
     };
   }
 

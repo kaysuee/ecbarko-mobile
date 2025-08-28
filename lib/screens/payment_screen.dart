@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/notification_service.dart';
+import '../widgets/constant_dialog.dart';
 
 String getBaseUrl() {
   //return 'https://ecbarko.onrender.com';
@@ -234,7 +235,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     _buildActionButton(
                       context,
                       Icons.book_online,
-                      'View Active Bookings',
+                      'Active Bookings',
                       Ec_PRIMARY,
                       () {
                         Navigator.of(context).pop();
@@ -251,7 +252,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     _buildActionButton(
                       context,
                       Icons.refresh,
-                      'Reset Payment Status (Debug)',
+                      'Reset Payment (Debug)',
                       Colors.orange,
                       () async {
                         final prefs = await SharedPreferences.getInstance();
@@ -495,7 +496,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     });
                   },
                   child: Text(
-                    'Reset Payment Status (Debug)',
+                    'Reset Payment (Debug)',
                     style: TextStyle(
                       color: Colors.orange[700],
                       fontSize: 14.sp,
@@ -512,26 +513,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return WillPopScope(
       onWillPop: () async {
         // Show confirmation dialog when trying to go back
-        final shouldPop = await showDialog<bool>(
+        final shouldPop = await ConstantDialog.showConfirmationDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Cancel Payment?'),
-            content: const Text(
-                'Are you sure you want to cancel this payment? Your booking details will be lost.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('No, Continue'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                ),
-                child: const Text('Yes, Cancel'),
-              ),
-            ],
-          ),
+          title: 'Cancel Payment?',
+          message:
+              'Are you sure you want to cancel this payment? Your booking details will be lost.',
+          confirmText: 'Yes, Cancel',
+          cancelText: 'No, Continue',
+          confirmColor: Colors.red,
         );
         return shouldPop ?? false;
       },
@@ -603,185 +592,69 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               return;
                             }
 
-                            showDialog(
+                            ConstantDialog.showActionDialog(
                               context: context,
-                              barrierDismissible: false,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  backgroundColor: Ec_BG_SKY_BLUE,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20.r),
-                                  ),
-                                  title: Column(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.all(15.w),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green[50],
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.check_circle,
-                                          color: Colors.green,
-                                          size: 40.sp,
-                                        ),
-                                      ),
-                                      SizedBox(height: 15.h),
-                                      Text(
-                                        'Payment Successful!',
-                                        style: TextStyle(
-                                          fontSize: 24.sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green[700],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.all(15.w),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue[50],
-                                          borderRadius:
-                                              BorderRadius.circular(12.r),
-                                          border: Border.all(
-                                            color: Colors.blue[100]!,
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(Icons.receipt_long,
-                                                    color: Colors.blue[700],
-                                                    size: 20.sp),
-                                                SizedBox(width: 8.w),
-                                                Text(
-                                                  'Booking Confirmed',
-                                                  style: TextStyle(
-                                                    fontSize: 16.sp,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.blue[700],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            SizedBox(height: 10.h),
-                                            Text(
-                                              'Your payment has been processed successfully.',
-                                              style: TextStyle(
-                                                fontSize: 14.sp,
-                                                color: Colors.blue[900],
-                                              ),
-                                            ),
-                                          ],
+                              title: 'Payment Successful!',
+                              message:
+                                  'Your payment has been processed successfully and your booking is confirmed.',
+                              actions: [
+                                DialogAction(
+                                  text: 'Go to Dashboard',
+                                  icon: Icons.dashboard,
+                                  color: Colors.grey[600]!,
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.of(context)
+                                        .popUntil((route) => route.isFirst);
+                                  },
+                                ),
+                                DialogAction(
+                                  text: 'View E-Ticket',
+                                  icon: Icons.confirmation_number,
+                                  color: Ec_PRIMARY,
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TicketScreen(
+                                          passengers: widget.passengers,
+                                          departureLocation:
+                                              widget.departureLocation,
+                                          arrivalLocation:
+                                              widget.arrivalLocation,
+                                          departDate: widget.departDate,
+                                          departTime: widget.departTime,
+                                          arriveDate: widget.arriveDate,
+                                          arriveTime: widget.arriveTime,
+                                          shippingLine: widget.shippingLine,
+                                          hasVehicle: widget.hasVehicle,
+                                          bookingReference:
+                                              widget.bookingReference,
+                                          selectedCardType:
+                                              widget.selectedCardType,
+                                          vehicleDetail: widget.vehicleDetail,
                                         ),
                                       ),
-                                      SizedBox(height: 20.h),
-                                      Container(
-                                        padding: EdgeInsets.all(15.w),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[100],
-                                          borderRadius:
-                                              BorderRadius.circular(12.r),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'What would you like to do next?',
-                                              style: TextStyle(
-                                                fontSize: 16.sp,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.grey[800],
-                                              ),
-                                            ),
-                                            SizedBox(height: 15.h),
-                                            _buildActionButton(
-                                              context,
-                                              Icons.dashboard,
-                                              'Go to Dashboard',
-                                              Colors.grey[600]!,
-                                              () {
-                                                Navigator.of(context).pop();
-                                                Navigator.of(context).popUntil(
-                                                    (route) => route.isFirst);
-                                              },
-                                            ),
-                                            SizedBox(height: 10.h),
-                                            _buildActionButton(
-                                              context,
-                                              Icons.confirmation_number,
-                                              'View E-Ticket',
-                                              Ec_PRIMARY,
-                                              () {
-                                                Navigator.of(context).pop();
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        TicketScreen(
-                                                      passengers:
-                                                          widget.passengers,
-                                                      departureLocation: widget
-                                                          .departureLocation,
-                                                      arrivalLocation: widget
-                                                          .arrivalLocation,
-                                                      departDate:
-                                                          widget.departDate,
-                                                      departTime:
-                                                          widget.departTime,
-                                                      arriveDate:
-                                                          widget.arriveDate,
-                                                      arriveTime:
-                                                          widget.arriveTime,
-                                                      shippingLine:
-                                                          widget.shippingLine,
-                                                      hasVehicle:
-                                                          widget.hasVehicle,
-                                                      bookingReference: widget
-                                                          .bookingReference,
-                                                      selectedCardType: widget
-                                                          .selectedCardType,
-                                                      vehicleDetail:
-                                                          widget.vehicleDetail,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                            SizedBox(height: 10.h),
-                                            _buildActionButton(
-                                              context,
-                                              Icons.book_online,
-                                              'View Active Bookings',
-                                              Ec_PRIMARY,
-                                              () {
-                                                Navigator.of(context).pop();
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const BookingScreen(),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
+                                    );
+                                  },
+                                ),
+                                DialogAction(
+                                  text: 'Active Bookings',
+                                  icon: Icons.book_online,
+                                  color: Ec_PRIMARY,
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const BookingScreen(),
                                       ),
-                                    ],
-                                  ),
-                                );
-                              },
+                                    );
+                                  },
+                                ),
+                              ],
                             );
                           },
                     icon: isLoading
@@ -948,6 +821,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       onTap: onPressed,
       borderRadius: BorderRadius.circular(8.r),
       child: Container(
+        width: double.infinity, // Ensure full width
         padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -958,15 +832,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
           children: [
             Icon(icon, color: color, size: 20.sp),
             SizedBox(width: 12.w),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w500,
+            Expanded(
+              // Use Expanded instead of Spacer to prevent overflow
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis, // Handle very long text
               ),
             ),
-            const Spacer(),
+            SizedBox(width: 8.w), // Small spacing before arrow
             Icon(
               Icons.arrow_forward_ios,
               color: color,

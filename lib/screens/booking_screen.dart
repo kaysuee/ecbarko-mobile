@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import '../services/notification_service.dart';
 import '../utils/date_formatter.dart';
+import '../widgets/constant_dialog.dart';
 import 'completed_booking_screen.dart';
 
 String getBaseUrl() {
@@ -841,7 +842,7 @@ class _BookingScreenState extends State<BookingScreen>
                 // 🚀 Action Buttons (matching schedule card button style)
                 Row(
                   children: [
-                    // 📱 View Details Button
+                    // 📱 Booking Summary Button
                     Expanded(
                       child: Container(
                         height: 50.h,
@@ -855,7 +856,7 @@ class _BookingScreenState extends State<BookingScreen>
                             ),
                           ),
                           onPressed: () {
-                            _viewBookingDetails(booking);
+                            _viewBookingSummary(booking);
                           },
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -867,9 +868,9 @@ class _BookingScreenState extends State<BookingScreen>
                               ),
                               SizedBox(width: 4.w),
                               Text(
-                                'View Details',
+                                'Booking Summary',
                                 style: TextStyle(
-                                  fontSize: 13.sp,
+                                  fontSize: 10.sp,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
@@ -941,12 +942,12 @@ class _BookingScreenState extends State<BookingScreen>
     }
   }
 
-  void _viewBookingDetails(BookingModel booking) {
-    // Navigate to booking details view (similar to e-ticket)
+  void _viewBookingSummary(BookingModel booking) {
+    // Navigate to booking summary view (similar to e-ticket)
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => _buildBookingDetailsView(booking),
+        builder: (context) => _buildBookingSummaryView(booking),
       ),
     );
   }
@@ -1205,12 +1206,12 @@ class _BookingScreenState extends State<BookingScreen>
     }
   }
 
-  Widget _buildBookingDetailsView(BookingModel booking) {
+  Widget _buildBookingSummaryView(BookingModel booking) {
     return Scaffold(
       backgroundColor: Ec_BG_SKY_BLUE,
       appBar: AppBar(
         title: Text(
-          'Booking Details',
+          'Booking Summary',
           style: TextStyle(
             color: Colors.white,
             fontSize: 20.sp,
@@ -2468,82 +2469,38 @@ class _BookingScreenState extends State<BookingScreen>
   }
 
   // Method to show cancel booking confirmation dialog
-  void _showCancelBookingDialog(BookingModel booking) {
-    showDialog(
+  void _showCancelBookingDialog(BookingModel booking) async {
+    final shouldCancel = await ConstantDialog.showConfirmationDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.orange,
-                size: 24.sp,
-              ),
-              SizedBox(width: 12.w),
-              Text(
-                'Cancel Booking?',
-                style: TextStyle(
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            'Are you sure you want to cancel your booking #${booking.bookingId}? This action cannot be undone.',
-            style: TextStyle(fontSize: 16.sp),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Keep Booking',
-                style: TextStyle(
-                  color: Ec_PRIMARY,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _cancelBooking(booking);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-              ),
-              child: Text(
-                'Cancel Booking',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+      title: 'Cancel Booking?',
+      message:
+          'Are you sure you want to cancel your booking #${booking.bookingId}? This action cannot be undone.',
+      confirmText: 'Cancel Booking',
+      cancelText: 'Keep Booking',
+      confirmColor: Colors.red,
+      cancelColor: Ec_PRIMARY,
     );
+
+    if (shouldCancel == true) {
+      _cancelBooking(booking);
+    }
   }
 
   // Method to handle booking cancellation
   void _cancelBooking(BookingModel booking) {
     // TODO: Implement actual cancellation logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-            'Cancellation request submitted for booking #${booking.bookingId}'),
-        backgroundColor: Colors.orange,
-      ),
+
+    // Show success dialog instead of SnackBar for better UX
+    ConstantDialog.showSuccessDialog(
+      context: context,
+      title: 'Cancellation Submitted',
+      message:
+          'Your cancellation request for booking #${booking.bookingId} has been submitted successfully.',
+      confirmText: 'OK',
+      onConfirm: () {
+        // Refresh the booking list
+        _loadActiveBooking();
+      },
     );
   }
 
@@ -2591,8 +2548,12 @@ class _BookingScreenState extends State<BookingScreen>
                 onTap: () {
                   Navigator.pop(context);
                   // TODO: Navigate to e-ticket view
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('E-Ticket view coming soon!')),
+                  ConstantDialog.showInfoDialog(
+                    context: context,
+                    title: 'Coming Soon',
+                    message:
+                        'E-Ticket view functionality will be available in the next update!',
+                    confirmText: 'Got It',
                   );
                 },
               ),

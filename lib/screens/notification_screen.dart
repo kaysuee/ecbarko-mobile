@@ -1,14 +1,12 @@
 // notifications_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 import 'package:EcBarko/constants.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../utils/responsive_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'notification_history_screen.dart';
 
 String getBaseUrl() {
   //return 'https://ecbarko.onrender.com';
@@ -31,10 +29,18 @@ class _NotificationScreenState extends State<NotificationScreen>
   String? userId;
 
   List<NotificationModel> get filteredNotifications {
-    if (selectedFilterType == 'All') return notifications.reversed.toList();
-    return notifications
-        .where((n) => n.type.toLowerCase() == selectedFilterType.toLowerCase())
-        .toList()
+    if (selectedFilterType == 'All') return notifications;
+
+    // Map filter types to actual notification types
+    final typeMapping = {
+      'Booking': ['booking_created', 'booking_reminder'],
+      'Card': ['card_loaded', 'card_linked', 'card_tapped'],
+      'Profile': ['profile_update', 'password_update'],
+      'System': ['system', 'general', 'test'],
+    };
+
+    final allowedTypes = typeMapping[selectedFilterType] ?? [];
+    return notifications.where((n) => allowedTypes.contains(n.type)).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
@@ -54,23 +60,15 @@ class _NotificationScreenState extends State<NotificationScreen>
       final currentUserId = prefs.getString('userID');
       final token = prefs.getString('token');
 
-      print('🔍 Debug: userID = $currentUserId');
-      print('🔍 Debug: token = ${token != null ? 'Present' : 'Missing'}');
-
       if (currentUserId != null && token != null) {
         setState(() {
           userId = currentUserId;
         });
 
-        print('🔍 Debug: Fetching notifications for user: $currentUserId');
-
         final notificationsData =
             await NotificationService.getUserNotifications(
           userId: currentUserId,
         );
-
-        print(
-            '🔍 Debug: Received ${notificationsData.length} notifications from API');
 
         final List<NotificationModel> loadedNotifications = notificationsData
             .map((json) => NotificationModel.fromJson(json))
@@ -83,18 +81,7 @@ class _NotificationScreenState extends State<NotificationScreen>
           notifications = loadedNotifications;
           isLoading = false;
         });
-
-        print(
-            '🔍 Debug: Successfully loaded ${notifications.length} notifications');
       } else {
-        print('❌ Error: Missing userID or token');
-        if (currentUserId == null) {
-          print('❌ Error: userID is null');
-        }
-        if (token == null) {
-          print('❌ Error: token is null');
-        }
-
         setState(() {
           isLoading = false;
         });
@@ -141,12 +128,7 @@ class _NotificationScreenState extends State<NotificationScreen>
     if (notification.isRead) return;
 
     try {
-      await NotificationService.markNotificationAsRead(
-        notificationId: notification.id,
-        userId: userId!,
-      );
-
-      // Update local state
+      // Update local state first for immediate UI feedback
       setState(() {
         final index = notifications.indexWhere((n) => n.id == notification.id);
         if (index != -1) {
@@ -159,37 +141,72 @@ class _NotificationScreenState extends State<NotificationScreen>
             additionalData: notification.additionalData,
             createdAt: notification.createdAt,
             isRead: true,
+            isArchived: notification.isArchived,
           );
         }
       });
+
+      // Then update backend
+      await NotificationService.markNotificationAsRead(
+        notificationId: notification.id,
+        userId: userId!,
+      );
+
+      // Refresh notifications to ensure sync
+      await _loadNotifications();
     } catch (e) {
       print('Error marking notification as read: $e');
+      // Revert local state if backend update failed
+      setState(() {
+        final index = notifications.indexWhere((n) => n.id == notification.id);
+        if (index != -1) {
+          notifications[index] = NotificationModel(
+            id: notification.id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            userId: notification.userId,
+            additionalData: notification.additionalData,
+            createdAt: notification.createdAt,
+            isRead: notification.isRead,
+            isArchived: notification.isArchived,
+          );
+        }
+      });
     }
   }
 
   Future<void> _deleteNotification(NotificationModel notification) async {
     try {
+      // Update local state first for immediate UI feedback
+      setState(() {
+        notifications.removeWhere((n) => n.id == notification.id);
+      });
+
+      // Then update backend
       await NotificationService.deleteNotification(
         notificationId: notification.id,
         userId: userId!,
       );
 
-      // Remove from local state
-      setState(() {
-        notifications.removeWhere((n) => n.id == notification.id);
-      });
+      // Refresh notifications to ensure sync
+      await _loadNotifications();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Notification deleted'),
+          content: Text('Notification removed'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
       print('Error deleting notification: $e');
+      // Revert local state if backend update failed
+      setState(() {
+        notifications.add(notification);
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to delete notification'),
+          content: Text('Failed to remove notification'),
           backgroundColor: Colors.red,
         ),
       );
@@ -409,20 +426,21 @@ class _NotificationScreenState extends State<NotificationScreen>
           if (notifications.isNotEmpty)
             IconButton(
               icon: Icon(
-                Icons.clear_all,
+                Icons.history,
                 color: Colors.white,
                 size: ResponsiveUtils.iconSizeM,
               ),
-              onPressed: () => _showClearAllDialog(),
+              onPressed: () => _showNotificationHistory(),
+              tooltip: 'View History',
             ),
-          // Test button for debugging
           IconButton(
             icon: Icon(
-              Icons.bug_report,
+              Icons.clear_all,
               color: Colors.white,
               size: ResponsiveUtils.iconSizeM,
             ),
-            onPressed: () => _createTestNotification(),
+            onPressed: () => _showClearAllDialog(),
+            tooltip: 'Archive All',
           ),
         ],
       ),
@@ -431,33 +449,154 @@ class _NotificationScreenState extends State<NotificationScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Notification Summary Section
             Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              padding: EdgeInsets.all(ResponsiveUtils.spacingM),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Ec_DARK_PRIMARY.withOpacity(0.1),
+                    Colors.blue.withOpacity(0.05)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: Ec_DARK_PRIMARY.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ResponsiveText(
+                          'Total Notifications',
+                          fontSize: ResponsiveUtils.fontSizeS,
+                          color: Colors.grey[600],
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacingS),
+                        ResponsiveText(
+                          '${notifications.length}',
+                          fontSize: ResponsiveUtils.fontSizeXL,
+                          fontWeight: FontWeight.bold,
+                          color: Ec_DARK_PRIMARY,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 40.h,
+                    color: Colors.grey.withOpacity(0.3),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        ResponsiveText(
+                          'Unread',
+                          fontSize: ResponsiveUtils.fontSizeS,
+                          color: Colors.grey[600],
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacingS),
+                        ResponsiveText(
+                          '${notifications.where((n) => !n.isRead).length}',
+                          fontSize: ResponsiveUtils.fontSizeXL,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 40.h,
+                    color: Colors.grey.withOpacity(0.3),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        ResponsiveText(
+                          'Latest',
+                          fontSize: ResponsiveUtils.fontSizeS,
+                          color: Colors.grey[600],
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacingS),
+                        ResponsiveText(
+                          notifications.isNotEmpty
+                              ? notifications.first.getTimeAgo()
+                              : 'None',
+                          fontSize: ResponsiveUtils.fontSizeS,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[700],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: ResponsiveUtils.spacingM),
+            // Enhanced Filter Section
+            Container(
+              padding: EdgeInsets.all(ResponsiveUtils.spacingM),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border.all(color: Ec_DARK_PRIMARY),
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(12.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedFilterType,
-                  isExpanded: true,
-                  items: ['All', 'Order', 'Payment', 'System']
-                      .map((value) => DropdownMenuItem<String>(
-                            value: value,
-                            child: ResponsiveText(
-                              _getFilterDisplayName(value),
-                              fontSize: ResponsiveUtils.fontSizeM,
-                            ),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedFilterType = value!;
-                    });
-                  },
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.filter_list,
+                        color: Ec_DARK_PRIMARY,
+                        size: ResponsiveUtils.iconSizeM,
+                      ),
+                      SizedBox(width: ResponsiveUtils.spacingS),
+                      ResponsiveText(
+                        'Filter Notifications',
+                        fontSize: ResponsiveUtils.fontSizeL,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacingM),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildFilterChip(
+                            'All', Icons.all_inclusive, Ec_DARK_PRIMARY),
+                        SizedBox(width: ResponsiveUtils.spacingS),
+                        _buildFilterChip(
+                            'Booking', Icons.confirmation_number, Colors.green),
+                        SizedBox(width: ResponsiveUtils.spacingS),
+                        _buildFilterChip(
+                            'Card', Icons.credit_card, Colors.purple),
+                        SizedBox(width: ResponsiveUtils.spacingS),
+                        _buildFilterChip('Profile', Icons.person, Colors.blue),
+                        SizedBox(width: ResponsiveUtils.spacingS),
+                        _buildFilterChip(
+                            'System', Icons.settings, Colors.orange),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
             SizedBox(height: ResponsiveUtils.spacingM),
@@ -481,17 +620,97 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  String _getFilterDisplayName(String filterType) {
-    switch (filterType) {
-      case 'Order':
-        return 'Order';
-      case 'Payment':
-        return 'Payment';
-      case 'System':
-        return 'System';
-      default:
-        return filterType;
-    }
+  Widget _buildFilterChip(String label, IconData icon, Color color) {
+    final isSelected = selectedFilterType == label;
+    final notificationCount = _getNotificationCount(label);
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedFilterType = label;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: ResponsiveUtils.spacingM,
+          vertical: ResponsiveUtils.spacingS,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? color : Colors.white,
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.shade300,
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(25.r),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: ResponsiveUtils.iconSizeS,
+              color: isSelected ? Colors.white : color,
+            ),
+            SizedBox(width: ResponsiveUtils.spacingS),
+            ResponsiveText(
+              label,
+              fontSize: ResponsiveUtils.fontSizeS,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? Colors.white : color,
+            ),
+            if (notificationCount > 0) ...[
+              SizedBox(width: ResponsiveUtils.spacingS),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 6.w,
+                  vertical: 2.h,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : color,
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: ResponsiveText(
+                  notificationCount.toString(),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? color : Colors.white,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  int _getNotificationCount(String filterType) {
+    if (filterType == 'All') return notifications.length;
+
+    // Map filter types to actual notification types
+    final typeMapping = {
+      'Booking': ['booking_created', 'booking_reminder'],
+      'Card': ['card_loaded', 'card_linked', 'card_tapped'],
+      'Profile': ['profile_update', 'password_update'],
+      'System': ['system', 'general', 'test'],
+    };
+
+    final allowedTypes = typeMapping[filterType] ?? [];
+    return notifications.where((n) => allowedTypes.contains(n.type)).length;
   }
 
   Widget _buildEmptyState() {
@@ -527,33 +746,43 @@ class _NotificationScreenState extends State<NotificationScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All Notifications'),
-        content:
-            const Text('Are you sure you want to delete all notifications?'),
+        title: const Text('Archive All Notifications'),
+        content: const Text(
+          'This will move all notifications to your notification history. You can still view them later, but they won\'t appear in your main notifications list.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             onPressed: () async {
               Navigator.pop(context);
-              await _clearAllNotifications();
+              await _archiveAllNotifications();
             },
-            child:
-                const Text('Clear All', style: TextStyle(color: Colors.white)),
+            child: const Text('Archive All',
+                style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _clearAllNotifications() async {
+  void _showNotificationHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NotificationHistoryScreen(userId: userId!),
+      ),
+    );
+  }
+
+  Future<void> _archiveAllNotifications() async {
     try {
-      // Delete all notifications from the backend
+      // Mark all notifications as archived in the backend
       for (final notification in notifications) {
-        await NotificationService.deleteNotification(
+        await NotificationService.archiveNotification(
           notificationId: notification.id,
           userId: userId!,
         );
@@ -566,63 +795,15 @@ class _NotificationScreenState extends State<NotificationScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('All notifications cleared'),
+          content: Text('All notifications archived'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
-      print('Error clearing notifications: $e');
+      print('Error archiving notifications: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to clear some notifications'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  // Test method to create a sample notification
-  Future<void> _createTestNotification() async {
-    try {
-      if (userId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User ID not available. Please log in again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      print('🔍 Creating test notification for user: $userId');
-
-      await NotificationService.createNotification(
-        type: 'test',
-        title: 'Test Notification',
-        message: 'This is a test notification to verify the system is working.',
-        userId: userId!,
-        additionalData: {
-          'test': true,
-          'timestamp': DateTime.now().toIso8601String(),
-        },
-      );
-
-      print('🔍 Test notification created successfully');
-
-      // Refresh the notifications list
-      await _loadNotifications();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Test notification created successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      print('❌ Error creating test notification: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create test notification: $e'),
+          content: Text('Failed to archive some notifications'),
           backgroundColor: Colors.red,
         ),
       );

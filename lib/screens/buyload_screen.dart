@@ -41,10 +41,16 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
   @override
   void initState() {
     super.initState();
-    // Start with the first preset amount selected
-    selectedAmount = presetAmounts[0];
-    loadAmountController.text = selectedAmount.toString();
-    _loadCard();
+    print('🚀 BuyLoadScreen initState called');
+    try {
+      // Start with the first preset amount selected
+      selectedAmount = presetAmounts[0];
+      loadAmountController.text = selectedAmount.toString();
+      print('✅ BuyLoadScreen initialization successful');
+      _loadCard();
+    } catch (e) {
+      print('❌ BuyLoadScreen initialization failed: $e');
+    }
   }
 
   Future<void> _loadCard() async {
@@ -930,102 +936,125 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
   }
 
   Widget _buildRFIDImage(BuildContext context) {
-    return BounceTapWrapper(
-      onTap: () =>
-          _navigateTo(context, const RFIDCardScreen(showBackButton: true)),
-      child: Card(
-        color: Ec_PRIMARY,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16.r),
-        ),
-        elevation: 8,
-        margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-        child: Container(
-          width: double.infinity,
-          // height: 220.h,
-          padding: EdgeInsets.all(18.w),
-          decoration: BoxDecoration(
+    print('🖼️ Building RFID Image...');
+    try {
+      return BounceTapWrapper(
+        onTap: () =>
+            _navigateTo(context, const RFIDCardScreen(showBackButton: true)),
+        child: Card(
+          color: Ec_PRIMARY,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.r),
-            gradient: const RadialGradient(
-              center: Alignment.center,
-              radius: 1.0,
-              colors: [
-                Color(0xFF1A5A91),
-                Color(0xFF142F60),
-              ],
-              stops: [0.3, 1.0],
-            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Image.asset(
-                    'assets/images/logoWhite.png',
-                    width: 50.w, // reduced from 60.w to 50.w
-                    height: 50.w,
-                  ),
-                  Text(
-                    'RFID CARD',
+          elevation: 8,
+          margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+          child: Container(
+            width: double.infinity,
+            // height: 220.h,
+            padding: EdgeInsets.all(18.w),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16.r),
+              gradient: const RadialGradient(
+                center: Alignment.center,
+                radius: 1.0,
+                colors: [
+                  Color(0xFF1A5A91),
+                  Color(0xFF142F60),
+                ],
+                stops: [0.3, 1.0],
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Image.asset(
+                      'assets/images/logoWhite.png',
+                      width: 50.w, // reduced from 60.w to 50.w
+                      height: 50.w,
+                    ),
+                    Text(
+                      'RFID CARD',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22.sp, // reduced from 25.sp to 22.sp
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 30.h),
+                Row(
+                  children: [
+                    Text(
+                      'Available Balance',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 16.sp, // reduced from 18.sp to 16.sp
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          isBalanceVisible = !isBalanceVisible;
+                        });
+                      },
+                      child: Icon(
+                        isBalanceVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                        color: Colors.white.withOpacity(0.8),
+                        size: 18.sp, // reduced from 20.sp to 18.sp
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4.h),
+                Container(
+                  width: double.infinity,
+                  child: Text(
+                    isBalanceVisible == true
+                        ? '₱${(cardData?['balance']?.toString() ?? '0').replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}'
+                        : '•••••••••',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 22.sp, // reduced from 25.sp to 22.sp
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
+                      fontSize: 28.sp, // reduced from 40.sp to 28.sp
+                      fontWeight: FontWeight.bold,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
-                ],
-              ),
-              SizedBox(height: 30.h),
-              Row(
-                children: [
-                  Text(
-                    'Available Balance',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 16.sp, // reduced from 18.sp to 16.sp
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(width: 8.w),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isBalanceVisible = !isBalanceVisible;
-                      });
-                    },
-                    child: Icon(
-                      isBalanceVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: Colors.white.withOpacity(0.8),
-                      size: 18.sp, // reduced from 20.sp to 18.sp
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4.h),
-              Flexible(
-                child: Text(
-                  isBalanceVisible == true
-                      ? '₱${(cardData?['balance']?.toString() ?? '0').replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}'
-                      : '•••••••••',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28.sp, // reduced from 40.sp to 28.sp
-                    fontWeight: FontWeight.bold,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } catch (e, stackTrace) {
+      print('❌ Error in _buildRFIDImage: $e');
+      print('❌ Stack trace: $stackTrace');
+      return Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: Colors.red[100],
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: Colors.red),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.error, color: Colors.red),
+            const SizedBox(height: 8),
+            Text('Error building RFID image: $e'),
+          ],
+        ),
+      );
+    }
   }
 
   // Widget _buildRFIDImage(BuildContext context) {
@@ -1528,239 +1557,270 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Ec_BG_SKY_BLUE,
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF013986),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Buy Load',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w700,
+    print('🏗️ BuyLoadScreen build method called');
+    try {
+      print('🔧 Building Scaffold...');
+      final scaffold = Scaffold(
+        backgroundColor: Ec_BG_SKY_BLUE,
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF013986),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
+          title: const Text(
+            'Buy Load',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildRFIDImage(context),
-            SizedBox(height: 24.h),
+        body: SingleChildScrollView(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildRFIDImage(context),
+              SizedBox(height: 24.h),
 
-            // Amount Selection Title
-            Container(
-              padding: EdgeInsets.only(bottom: 8.h),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8.w),
-                    decoration: BoxDecoration(
-                      color: Ec_PRIMARY.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.payments_outlined,
-                        color: Ec_PRIMARY, size: 22.sp),
-                  ),
-                  SizedBox(width: 12.w),
-                  Text(
-                    'Load Amount',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 18.sp,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 16.h),
-
-            // Amount selection buttons
-            _buildPresetAmountButtons(),
-
-            SizedBox(height: 30.h),
-
-            // Payment Methods Title
-            Container(
-              padding: EdgeInsets.only(bottom: 8.h),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(8.w),
-                    decoration: BoxDecoration(
-                      color: Ec_PRIMARY.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child:
-                        Icon(Icons.credit_card, color: Ec_PRIMARY, size: 22.sp),
-                  ),
-                  SizedBox(width: 12.w),
-                  Text(
-                    'Payment Method',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 18.sp,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 16.h),
-
-            // QRPH Option
-            _buildPaymentMethodButton(
-              icon: Icons.qr_code,
-              iconColor: Ec_PRIMARY,
-              title: 'QR PH',
-              subtitle: 'Scan with any banking app or e-wallet',
-              isSelected: selectedPaymentMethod == 'QRPH',
-              onTap: () {
-                setState(() {
-                  selectedPaymentMethod = 'QRPH';
-                });
-              },
-            ),
-            SizedBox(height: 12.h),
-
-            // E-Wallet Option
-            _buildPaymentMethodButton(
-              icon: Icons.account_balance_wallet,
-              iconColor: Colors.green,
-              title: 'E-Wallet',
-              subtitle: 'GCash, PayMaya, or other digital wallets',
-              isSelected: selectedPaymentMethod == 'E-Wallet',
-              onTap: () {
-                setState(() {
-                  selectedPaymentMethod = 'E-Wallet';
-                });
-              },
-            ),
-
-            // Help text
-            if (selectedPaymentMethod == null) ...[
-              SizedBox(height: 16.h),
+              // Amount Selection Title
               Container(
-                padding: EdgeInsets.all(12.w),
+                padding: EdgeInsets.only(bottom: 8.h),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey[300]!,
+                      width: 1,
+                    ),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.blue[600],
-                      size: 20.sp,
+                    Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: Ec_PRIMARY.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.payments_outlined,
+                          color: Ec_PRIMARY, size: 22.sp),
                     ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        'Please select a payment method to continue',
-                        style: TextStyle(
-                          color: Colors.blue[700],
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    SizedBox(width: 12.w),
+                    Text(
+                      'Load Amount',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 18,
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-            ] else ...[
               SizedBox(height: 16.h),
+
+              // Amount selection buttons
+              _buildPresetAmountButtons(),
+
+              SizedBox(height: 30.h),
+
+              // Payment Methods Title
               Container(
-                padding: EdgeInsets.all(12.w),
+                padding: EdgeInsets.only(bottom: 8.h),
                 decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: Colors.green[200]!),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey[300]!,
+                      width: 1,
+                    ),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      color: Colors.green[600],
-                      size: 20.sp,
+                    Container(
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: Ec_PRIMARY.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.credit_card,
+                          color: Ec_PRIMARY, size: 22.sp),
                     ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        'Payment method selected: $selectedPaymentMethod',
-                        style: TextStyle(
-                          color: Colors.green[700],
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    SizedBox(width: 12.w),
+                    Text(
+                      'Payment Method',
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 18,
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
+                ),
+              ),
+              SizedBox(height: 16.h),
+
+              // QRPH Option
+              _buildPaymentMethodButton(
+                icon: Icons.qr_code,
+                iconColor: Ec_PRIMARY,
+                title: 'QR PH',
+                subtitle: 'Scan with any banking app or e-wallet',
+                isSelected: selectedPaymentMethod == 'QRPH',
+                onTap: () {
+                  setState(() {
+                    selectedPaymentMethod = 'QRPH';
+                  });
+                },
+              ),
+              SizedBox(height: 12.h),
+
+              // E-Wallet Option
+              _buildPaymentMethodButton(
+                icon: Icons.account_balance_wallet,
+                iconColor: Colors.green,
+                title: 'E-Wallet',
+                subtitle: 'GCash, PayMaya, or other digital wallets',
+                isSelected: selectedPaymentMethod == 'E-Wallet',
+                onTap: () {
+                  setState(() {
+                    selectedPaymentMethod = 'E-Wallet';
+                  });
+                },
+              ),
+
+              // Help text
+              if (selectedPaymentMethod == null) ...[
+                SizedBox(height: 16.h),
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.blue[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.blue[600],
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          'Please select a payment method to continue',
+                          style: TextStyle(
+                            color: Colors.blue[700],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                SizedBox(height: 16.h),
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: Colors.green[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.green[600],
+                        size: 20.sp,
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Text(
+                          'Payment method selected: $selectedPaymentMethod',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              SizedBox(height: 30.h),
+
+              // Proceed to Payment Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: selectedPaymentMethod == null
+                      ? null
+                      : () => navigateToPaymentScreen(selectedPaymentMethod!),
+                  icon:
+                      Icon(Icons.payment, color: Ec_LIGHT_PRIMARY, size: 20.sp),
+                  label: Text(
+                    selectedPaymentMethod == null
+                        ? 'Select Payment Method'
+                        : 'Proceed to Payment',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Ec_WHITE),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: selectedPaymentMethod == null
+                        ? Colors.grey[400]
+                        : Ec_PRIMARY,
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
+                  ),
                 ),
               ),
             ],
-
-            SizedBox(height: 30.h),
-
-// Proceed to Payment Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: selectedPaymentMethod == null
-                    ? null
-                    : () => navigateToPaymentScreen(selectedPaymentMethod!),
-                icon: Icon(Icons.payment, color: Ec_LIGHT_PRIMARY, size: 20.sp),
-                label: Text(
-                  selectedPaymentMethod == null
-                      ? 'Select Payment Method'
-                      : 'Proceed to Payment',
-                  style: TextStyle(
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Ec_WHITE),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: selectedPaymentMethod == null
-                      ? Colors.grey[400]
-                      : Ec_PRIMARY,
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
+      );
+      print('✅ Scaffold built successfully');
+      return scaffold;
+    } catch (e, stackTrace) {
+      print('❌ Error in BuyLoadScreen build: $e');
+      print('❌ Stack trace: $stackTrace');
+      return Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('Error loading Buy Load screen: $e'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {}); // Try to rebuild
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   // Payment method button
