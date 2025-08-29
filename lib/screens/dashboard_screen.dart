@@ -1117,7 +1117,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => AnnouncementsScreen()),
+          MaterialPageRoute(builder: (_) => AnnouncementScreen()),
         );
       },
       child: Container(

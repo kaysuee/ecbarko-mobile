@@ -25,23 +25,40 @@ class _NotificationScreenState extends State<NotificationScreen>
     with ResponsiveWidgetMixin {
   List<NotificationModel> notifications = [];
   String selectedFilterType = 'All';
+  String selectedReadStatus = 'All';
   bool isLoading = true;
   String? userId;
 
   List<NotificationModel> get filteredNotifications {
-    if (selectedFilterType == 'All') return notifications;
+    List<NotificationModel> filtered = notifications;
 
-    // Map filter types to actual notification types
-    final typeMapping = {
-      'Booking': ['booking_created', 'booking_reminder'],
-      'Card': ['card_loaded', 'card_linked', 'card_tapped'],
-      'Profile': ['profile_update', 'password_update'],
-      'System': ['system', 'general', 'test'],
-    };
+    // Filter by type
+    if (selectedFilterType != 'All') {
+      // Map filter types to actual notification types
+      final typeMapping = {
+        'Booking': ['booking_created', 'booking_reminder'],
+        'Card': ['card_loaded', 'card_linked', 'card_tapped'],
+        'Profile': ['profile_update', 'password_update'],
+        'System': ['system', 'general', 'test'],
+      };
 
-    final allowedTypes = typeMapping[selectedFilterType] ?? [];
-    return notifications.where((n) => allowedTypes.contains(n.type)).toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final allowedTypes = typeMapping[selectedFilterType] ?? [];
+      filtered = filtered.where((n) => allowedTypes.contains(n.type)).toList();
+    }
+
+    // Filter by read status
+    if (selectedReadStatus != 'All') {
+      if (selectedReadStatus == 'Read') {
+        filtered = filtered.where((n) => n.isRead).toList();
+      } else if (selectedReadStatus == 'Unread') {
+        filtered = filtered.where((n) => !n.isRead).toList();
+      }
+    }
+
+    // Sort by creation date (newest first)
+    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    return filtered;
   }
 
   @override
@@ -423,25 +440,25 @@ class _NotificationScreenState extends State<NotificationScreen>
           size: ResponsiveUtils.iconSizeM,
         ),
         actions: [
-          if (notifications.isNotEmpty)
-            IconButton(
-              icon: Icon(
-                Icons.history,
-                color: Colors.white,
-                size: ResponsiveUtils.iconSizeM,
-              ),
-              onPressed: () => _showNotificationHistory(),
-              tooltip: 'View History',
-            ),
           IconButton(
             icon: Icon(
-              Icons.clear_all,
+              Icons.history,
               color: Colors.white,
               size: ResponsiveUtils.iconSizeM,
             ),
-            onPressed: () => _showClearAllDialog(),
-            tooltip: 'Archive All',
+            onPressed: () => _showNotificationHistory(),
+            tooltip: 'View History',
           ),
+          if (notifications.isNotEmpty)
+            IconButton(
+              icon: Icon(
+                Icons.clear_all,
+                color: Colors.white,
+                size: ResponsiveUtils.iconSizeM,
+              ),
+              onPressed: () => _showClearAllDialog(),
+              tooltip: 'Clear Notifications',
+            ),
         ],
       ),
       body: ResponsiveContainer(
@@ -449,156 +466,109 @@ class _NotificationScreenState extends State<NotificationScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Notification Summary Section
-            Container(
-              padding: EdgeInsets.all(ResponsiveUtils.spacingM),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Ec_DARK_PRIMARY.withOpacity(0.1),
-                    Colors.blue.withOpacity(0.05)
+            // Filter Section with Improved Design
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 5.w),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showReadUnreadFilter(),
+                      icon: const Icon(Icons.mark_email_read,
+                          color: Colors.white),
+                      label: Text('Read/Unread',
+                          style:
+                              TextStyle(color: Colors.white, fontSize: 14.sp)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Ec_PRIMARY,
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.r),
+                        ),
+                        elevation: 3,
+                        shadowColor: Ec_PRIMARY.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 5.w),
+                    child: ElevatedButton.icon(
+                      onPressed: _showTypeFilter,
+                      icon: const Icon(Icons.category, color: Colors.white),
+                      label: Text('Type',
+                          style:
+                              TextStyle(color: Colors.white, fontSize: 14.sp)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Ec_PRIMARY,
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.r),
+                        ),
+                        elevation: 3,
+                        shadowColor: Ec_PRIMARY.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Show selected filters and clear option
+            if (selectedFilterType != 'All' || selectedReadStatus != 'All') ...[
+              SizedBox(height: 12.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: Ec_PRIMARY.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: Ec_DARK_PRIMARY.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ResponsiveText(
-                          'Total Notifications',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          color: Colors.grey[600],
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacingS),
-                        ResponsiveText(
-                          '${notifications.length}',
-                          fontSize: ResponsiveUtils.fontSizeXL,
-                          fontWeight: FontWeight.bold,
-                          color: Ec_DARK_PRIMARY,
-                        ),
-                      ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.filter_alt,
+                      color: Ec_PRIMARY,
+                      size: 16.sp,
                     ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40.h,
-                    color: Colors.grey.withOpacity(0.3),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ResponsiveText(
-                          'Unread',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          color: Colors.grey[600],
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacingS),
-                        ResponsiveText(
-                          '${notifications.where((n) => !n.isRead).length}',
-                          fontSize: ResponsiveUtils.fontSizeXL,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40.h,
-                    color: Colors.grey.withOpacity(0.3),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        ResponsiveText(
-                          'Latest',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          color: Colors.grey[600],
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacingS),
-                        ResponsiveText(
-                          notifications.isNotEmpty
-                              ? notifications.first.getTimeAgo()
-                              : 'None',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[700],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: ResponsiveUtils.spacingM),
-            // Enhanced Filter Section
-            Container(
-              padding: EdgeInsets.all(ResponsiveUtils.spacingM),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.filter_list,
-                        color: Ec_DARK_PRIMARY,
-                        size: ResponsiveUtils.iconSizeM,
-                      ),
-                      SizedBox(width: ResponsiveUtils.spacingS),
-                      ResponsiveText(
-                        'Filter Notifications',
-                        fontSize: ResponsiveUtils.fontSizeL,
+                    SizedBox(width: 8.w),
+                    Text(
+                      'Filtered: ${_getFilterDisplayText()}',
+                      style: TextStyle(
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: Ec_PRIMARY,
                       ),
-                    ],
-                  ),
-                  SizedBox(height: ResponsiveUtils.spacingM),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildFilterChip(
-                            'All', Icons.all_inclusive, Ec_DARK_PRIMARY),
-                        SizedBox(width: ResponsiveUtils.spacingS),
-                        _buildFilterChip(
-                            'Booking', Icons.confirmation_number, Colors.green),
-                        SizedBox(width: ResponsiveUtils.spacingS),
-                        _buildFilterChip(
-                            'Card', Icons.credit_card, Colors.purple),
-                        SizedBox(width: ResponsiveUtils.spacingS),
-                        _buildFilterChip('Profile', Icons.person, Colors.blue),
-                        SizedBox(width: ResponsiveUtils.spacingS),
-                        _buildFilterChip(
-                            'System', Icons.settings, Colors.orange),
-                      ],
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8.w),
+                    GestureDetector(
+                      onTap: _resetFilters,
+                      child: Container(
+                        padding: EdgeInsets.all(4.w),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.red,
+                          size: 14.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
             SizedBox(height: ResponsiveUtils.spacingM),
             Expanded(
               child: RefreshIndicator(
@@ -614,84 +584,6 @@ class _NotificationScreenState extends State<NotificationScreen>
                           ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, IconData icon, Color color) {
-    final isSelected = selectedFilterType == label;
-    final notificationCount = _getNotificationCount(label);
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedFilterType = label;
-        });
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: ResponsiveUtils.spacingM,
-          vertical: ResponsiveUtils.spacingS,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? color : Colors.white,
-          border: Border.all(
-            color: isSelected ? color : Colors.grey.shade300,
-            width: 1.5,
-          ),
-          borderRadius: BorderRadius.circular(25.r),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: ResponsiveUtils.iconSizeS,
-              color: isSelected ? Colors.white : color,
-            ),
-            SizedBox(width: ResponsiveUtils.spacingS),
-            ResponsiveText(
-              label,
-              fontSize: ResponsiveUtils.fontSizeS,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? Colors.white : color,
-            ),
-            if (notificationCount > 0) ...[
-              SizedBox(width: ResponsiveUtils.spacingS),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 6.w,
-                  vertical: 2.h,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : color,
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: ResponsiveText(
-                  notificationCount.toString(),
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? color : Colors.white,
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -808,5 +700,215 @@ class _NotificationScreenState extends State<NotificationScreen>
         ),
       );
     }
+  }
+
+  void _showReadUnreadFilter() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Ec_PRIMARY.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Icon(
+                  Icons.mark_email_read,
+                  color: Ec_PRIMARY,
+                  size: 20,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                'Filter by Read Status',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18.sp,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildFilterOption(
+                  'All', 'All notifications', Icons.all_inclusive, Ec_PRIMARY),
+              _buildFilterOption('Read', 'Read notifications',
+                  Icons.mark_email_read, Colors.green),
+              _buildFilterOption('Unread', 'Unread notifications',
+                  Icons.mark_email_unread, Colors.orange),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterOption(
+      String value, String label, IconData icon, Color color) {
+    final isSelected = (value == 'All' && selectedReadStatus == 'All') ||
+        (value == 'Read' && selectedReadStatus == 'Read') ||
+        (value == 'Unread' && selectedReadStatus == 'Unread');
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      decoration: BoxDecoration(
+        color: isSelected ? color.withOpacity(0.1) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isSelected ? color : Colors.grey[300]!,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: RadioListTile<String>(
+        value: value,
+        groupValue: selectedReadStatus,
+        onChanged: (newValue) {
+          setState(() {
+            selectedReadStatus = newValue!;
+          });
+          Navigator.pop(context);
+        },
+        title: Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            SizedBox(width: 12.w),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? color : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        activeColor: color,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      ),
+    );
+  }
+
+  void _showTypeFilter() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(
+                  color: Ec_PRIMARY.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Icon(
+                  Icons.category,
+                  color: Ec_PRIMARY,
+                  size: 20,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                'Filter by Type',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18.sp,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTypeFilterOption(
+                  'All', 'All types', Icons.all_inclusive, Ec_PRIMARY),
+              _buildTypeFilterOption('Booking', 'Booking notifications',
+                  Icons.confirmation_number, Colors.green),
+              _buildTypeFilterOption('Card', 'Card notifications',
+                  Icons.credit_card, Colors.purple),
+              _buildTypeFilterOption('Profile', 'Profile notifications',
+                  Icons.person, Colors.blue),
+              _buildTypeFilterOption('System', 'System notifications',
+                  Icons.settings, Colors.orange),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTypeFilterOption(
+      String value, String label, IconData icon, Color color) {
+    final isSelected = (value == 'All' && selectedFilterType == 'All') ||
+        (value == 'Booking' && selectedFilterType == 'Booking') ||
+        (value == 'Card' && selectedFilterType == 'Card') ||
+        (value == 'Profile' && selectedFilterType == 'Profile') ||
+        (value == 'System' && selectedFilterType == 'System');
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      decoration: BoxDecoration(
+        color: isSelected ? color.withOpacity(0.1) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isSelected ? color : Colors.grey[300]!,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: RadioListTile<String>(
+        value: value,
+        groupValue: selectedFilterType,
+        onChanged: (newValue) {
+          setState(() {
+            selectedFilterType = newValue!;
+          });
+          Navigator.pop(context);
+        },
+        title: Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            SizedBox(width: 12.w),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? color : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        activeColor: color,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      ),
+    );
+  }
+
+  void _resetFilters() {
+    setState(() {
+      selectedFilterType = 'All';
+      selectedReadStatus = 'All';
+    });
+  }
+
+  String _getFilterDisplayText() {
+    List<String> activeFilters = [];
+
+    if (selectedFilterType != 'All') {
+      activeFilters.add(selectedFilterType);
+    }
+    if (selectedReadStatus != 'All') {
+      activeFilters.add(selectedReadStatus);
+    }
+
+    return activeFilters.join(' + ');
   }
 }
