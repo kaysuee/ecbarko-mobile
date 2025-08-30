@@ -5,6 +5,8 @@ import '../models/announcement_model.dart';
 import '../services/announcement_service.dart';
 import '../utils/responsive_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AnnouncementScreen extends StatefulWidget {
   const AnnouncementScreen({Key? key}) : super(key: key);
@@ -19,6 +21,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
   String selectedPriority = 'All';
   bool isLoading = true;
   String? userId;
+  bool showAllAnnouncements =
+      false; // Toggle between active and all announcements
 
   @override
   void initState() {
@@ -33,27 +37,51 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       });
 
       final prefs = await SharedPreferences.getInstance();
-      final currentUserId = prefs.getString('userID');
+      final currentUserId =
+          prefs.getString('userId') ?? prefs.getString('userID');
 
       if (currentUserId != null) {
         setState(() {
           userId = currentUserId;
         });
 
-        final announcementsData = await AnnouncementService.getUserAnnouncements(
-          userId: currentUserId,
-        );
+        print('🔍 Fetching announcements for user: $currentUserId');
+        print('🔍 User ID type: ${currentUserId.runtimeType}');
+        print('🔍 User ID length: ${currentUserId.length}');
+
+        final announcementsData = showAllAnnouncements
+            ? await AnnouncementService.getAllAnnouncements(
+                userId: currentUserId,
+                type: selectedFilterType != 'All' ? selectedFilterType : null,
+                priority: selectedPriority != 'All' ? selectedPriority : null,
+                includeExpired: true,
+              )
+            : await AnnouncementService.getUserAnnouncements(
+                userId: currentUserId,
+                type: selectedFilterType != 'All' ? selectedFilterType : null,
+                priority: selectedPriority != 'All' ? selectedPriority : null,
+              );
+
+        print('📊 Raw announcements data: $announcementsData');
+        print('📊 Announcements count: ${announcementsData.length}');
 
         final List<AnnouncementModel> loadedAnnouncements = announcementsData
             .map((json) => AnnouncementModel.fromJson(json))
             .toList();
 
+        print('✅ Parsed announcements: ${loadedAnnouncements.length}');
+
         // Sort by priority and creation date (highest priority first, then newest)
         loadedAnnouncements.sort((a, b) {
-          final priorityOrder = {'critical': 4, 'high': 3, 'medium': 2, 'low': 1};
+          final priorityOrder = {
+            'critical': 4,
+            'high': 3,
+            'medium': 2,
+            'low': 1
+          };
           final aPriority = priorityOrder[a.priority] ?? 0;
           final bPriority = priorityOrder[b.priority] ?? 0;
-          
+
           if (aPriority != bPriority) {
             return bPriority.compareTo(aPriority);
           }
@@ -81,6 +109,73 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
     await _loadAnnouncements();
   }
 
+  Future<void> _debugFetchAll() async {
+    try {
+      print('🐛 DEBUG: Testing direct API call to /announcements');
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('❌ No token available');
+        return;
+      }
+
+      final response = await http.get(
+        Uri.parse('https://ecbarko-db.onrender.com/api/announcements'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('🐛 DEBUG Response status: ${response.statusCode}');
+      print('🐛 DEBUG Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('🐛 DEBUG: Found ${data.length} announcements in total');
+        if (data.isNotEmpty) {
+          print('🐛 DEBUG: First announcement: ${data[0]}');
+        }
+      }
+    } catch (e) {
+      print('🐛 DEBUG Error: $e');
+    }
+  }
+
+  Future<void> _debugTestUser() async {
+    try {
+      print('🧪 DEBUG: Testing user-specific announcements');
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final currentUserId =
+          prefs.getString('userId') ?? prefs.getString('userID');
+
+      if (token == null || currentUserId == null) {
+        print('❌ No token or user ID available');
+        return;
+      }
+
+      print('🧪 DEBUG: User ID: $currentUserId');
+
+      final response = await http.get(
+        Uri.parse(
+            'https://ecbarko-db.onrender.com/api/announcements/test/$currentUserId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('🧪 DEBUG Response status: ${response.statusCode}');
+      print('🧪 DEBUG Response body: ${response.body}');
+    } catch (e) {
+      print('🧪 DEBUG Error: $e');
+    }
+  }
+
   Future<void> _markAsRead(AnnouncementModel announcement) async {
     if (announcement.isReadBy(userId!)) return;
 
@@ -102,12 +197,16 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
 
     // Filter by type
     if (selectedFilterType != 'All') {
-      filtered = filtered.where((a) => a.type == selectedFilterType.toLowerCase()).toList();
+      filtered = filtered
+          .where((a) => a.type == selectedFilterType.toLowerCase())
+          .toList();
     }
 
     // Filter by priority
     if (selectedPriority != 'All') {
-      filtered = filtered.where((a) => a.priority == selectedPriority.toLowerCase()).toList();
+      filtered = filtered
+          .where((a) => a.priority == selectedPriority.toLowerCase())
+          .toList();
     }
 
     return filtered;
@@ -138,6 +237,24 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
             onPressed: _handleRefresh,
             tooltip: 'Refresh',
           ),
+          IconButton(
+            icon: Icon(
+              Icons.bug_report,
+              color: Colors.white,
+              size: ResponsiveUtils.iconSizeM,
+            ),
+            onPressed: _debugFetchAll,
+            tooltip: 'Debug: Fetch All',
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.science,
+              color: Colors.white,
+              size: ResponsiveUtils.iconSizeM,
+            ),
+            onPressed: _debugTestUser,
+            tooltip: 'Debug: Test User',
+          ),
         ],
       ),
       body: ResponsiveContainer(
@@ -145,200 +262,297 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Announcement Summary Section
+            // Toggle between Active and All Announcements
             Container(
-              padding: EdgeInsets.all(ResponsiveUtils.spacingM),
+              margin: EdgeInsets.only(bottom: 16.h),
+              padding: EdgeInsets.all(4.w),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Ec_DARK_PRIMARY.withOpacity(0.1), Colors.blue.withOpacity(0.05)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: Ec_DARK_PRIMARY.withOpacity(0.2),
-                  width: 1,
-                ),
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(30.r),
+                border: Border.all(color: Ec_DARK_PRIMARY.withOpacity(0.2)),
               ),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ResponsiveText(
-                          'Total Announcements',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          color: Colors.grey[600],
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showAllAnnouncements = false;
+                      });
+                      _loadAnnouncements();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 20.w, vertical: 10.h),
+                      decoration: BoxDecoration(
+                        color: !showAllAnnouncements
+                            ? Ec_DARK_PRIMARY
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(25.r),
+                      ),
+                      child: Text(
+                        'Active Only',
+                        style: TextStyle(
+                          color: !showAllAnnouncements
+                              ? Colors.white
+                              : Ec_DARK_PRIMARY,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
                         ),
-                        SizedBox(height: ResponsiveUtils.spacingS),
-                        ResponsiveText(
-                          '${announcements.length}',
-                          fontSize: ResponsiveUtils.fontSizeXL,
-                          fontWeight: FontWeight.bold,
-                          color: Ec_DARK_PRIMARY,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                  Container(
-                    width: 1,
-                    height: 40.h,
-                    color: Colors.grey.withOpacity(0.3),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ResponsiveText(
-                          'Unread',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          color: Colors.grey[600],
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showAllAnnouncements = true;
+                      });
+                      _loadAnnouncements();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 20.w, vertical: 10.h),
+                      decoration: BoxDecoration(
+                        color: showAllAnnouncements
+                            ? Ec_DARK_PRIMARY
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(25.r),
+                      ),
+                      child: Text(
+                        'All Announcements',
+                        style: TextStyle(
+                          color: showAllAnnouncements
+                              ? Colors.white
+                              : Ec_DARK_PRIMARY,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
                         ),
-                        SizedBox(height: ResponsiveUtils.spacingS),
-                        ResponsiveText(
-                          '${announcements.where((a) => !a.isReadBy(userId ?? '')).length}',
-                          fontSize: ResponsiveUtils.fontSizeXL,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40.h,
-                    color: Colors.grey.withOpacity(0.3),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        ResponsiveText(
-                          'Latest',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          color: Colors.grey[600],
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacingS),
-                        ResponsiveText(
-                          announcements.isNotEmpty 
-                              ? announcements.first.getTimeAgo()
-                              : 'None',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey[700],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: ResponsiveUtils.spacingM),
-            
-            // Filter Section
-            Container(
-              padding: EdgeInsets.all(ResponsiveUtils.spacingM),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ResponsiveText(
-                    'Filter Announcements',
-                    fontSize: ResponsiveUtils.fontSizeL,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                  SizedBox(height: ResponsiveUtils.spacingM),
-                  Row(
-                    children: [
-                      // Type Filter
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            border: Border.all(color: Ec_DARK_PRIMARY.withOpacity(0.3)),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedFilterType,
-                              isExpanded: true,
-                              icon: Icon(Icons.arrow_drop_down, color: Ec_DARK_PRIMARY),
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: ResponsiveUtils.fontSizeS,
-                              ),
-                              items: [
-                                DropdownMenuItem(value: 'All', child: Text('All Types')),
-                                DropdownMenuItem(value: 'info', child: Text('Info')),
-                                DropdownMenuItem(value: 'warning', child: Text('Warning')),
-                                DropdownMenuItem(value: 'urgent', child: Text('Urgent')),
-                                DropdownMenuItem(value: 'maintenance', child: Text('Maintenance')),
-                                DropdownMenuItem(value: 'general', child: Text('General')),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedFilterType = value!;
-                                });
-                              },
+
+            // Summary Section
+            if (announcements.isNotEmpty) ...[
+              Container(
+                margin: EdgeInsets.only(bottom: 16.h),
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: Ec_DARK_PRIMARY.withOpacity(0.1)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Total Announcements',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
+                          SizedBox(height: 4.h),
+                          Text(
+                            '${announcements.length}',
+                            style: TextStyle(
+                              fontSize: 24.sp,
+                              color: Ec_DARK_PRIMARY,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (showAllAnnouncements) ...[
+                      Container(
+                        width: 1,
+                        height: 40.h,
+                        color: Colors.grey[300],
+                      ),
+                      SizedBox(width: 16.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Active',
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              '${announcements.where((a) => a.isActive && !a.isExpired).length}',
+                              style: TextStyle(
+                                fontSize: 24.sp,
+                                color: Colors.green[600],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(width: ResponsiveUtils.spacingM),
-                      // Priority Filter
+                      Container(
+                        width: 1,
+                        height: 40.h,
+                        color: Colors.grey[300],
+                      ),
+                      SizedBox(width: 16.w),
                       Expanded(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            border: Border.all(color: Ec_DARK_PRIMARY.withOpacity(0.3)),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedPriority,
-                              isExpanded: true,
-                              icon: Icon(Icons.arrow_drop_down, color: Ec_DARK_PRIMARY),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Expired',
                               style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: ResponsiveUtils.fontSizeS,
+                                fontSize: 12.sp,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
                               ),
-                              items: [
-                                DropdownMenuItem(value: 'All', child: Text('All Priorities')),
-                                DropdownMenuItem(value: 'low', child: Text('Low')),
-                                DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                                DropdownMenuItem(value: 'high', child: Text('High')),
-                                DropdownMenuItem(value: 'critical', child: Text('Critical')),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedPriority = value!;
-                                });
-                              },
                             ),
-                          ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              '${announcements.where((a) => a.isExpired).length}',
+                              style: TextStyle(
+                                fontSize: 24.sp,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ],
+
+            // Filter Section with Improved Design
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 5.w),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _showTypeFilter();
+                      },
+                      icon: const Icon(Icons.category, color: Colors.white),
+                      label: Text('Type',
+                          style:
+                              TextStyle(color: Colors.white, fontSize: 14.sp)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Ec_DARK_PRIMARY,
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.r),
+                        ),
+                        elevation: 3,
+                        shadowColor: Ec_DARK_PRIMARY.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 5.w),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        _showPriorityFilter();
+                      },
+                      icon:
+                          const Icon(Icons.priority_high, color: Colors.white),
+                      label: Text('Priority',
+                          style:
+                              TextStyle(color: Colors.white, fontSize: 14.sp)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Ec_DARK_PRIMARY,
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.r),
+                        ),
+                        elevation: 3,
+                        shadowColor: Ec_DARK_PRIMARY.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
+            // Show selected filters and clear option
+            if (selectedFilterType != 'All' || selectedPriority != 'All') ...[
+              SizedBox(height: 12.h),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: Ec_DARK_PRIMARY.withOpacity(0.3)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.filter_alt,
+                      color: Ec_DARK_PRIMARY,
+                      size: 16.sp,
+                    ),
+                    SizedBox(width: 8.w),
+                    Text(
+                      'Filtered: ${_getFilterDisplayText()}',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Ec_DARK_PRIMARY,
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    GestureDetector(
+                      onTap: _resetFilters,
+                      child: Container(
+                        padding: EdgeInsets.all(4.w),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.red,
+                          size: 14.sp,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             SizedBox(height: ResponsiveUtils.spacingM),
-            
+
             // Announcements List
             Expanded(
               child: RefreshIndicator(
@@ -391,7 +605,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                 height: 48.w,
                 decoration: BoxDecoration(
                   color: _getAnnouncementColor(announcement).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(ResponsiveUtils.cardRadius),
+                  borderRadius:
+                      BorderRadius.circular(ResponsiveUtils.cardRadius),
                 ),
                 child: Center(
                   child: ResponsiveText(
@@ -441,7 +656,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                           padding: EdgeInsets.symmetric(
                               horizontal: 6.w, vertical: 2.h),
                           decoration: BoxDecoration(
-                            color: _getPriorityColor(announcement.priority).withOpacity(0.1),
+                            color: _getPriorityColor(announcement.priority)
+                                .withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4.r),
                           ),
                           child: ResponsiveText(
@@ -456,7 +672,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                           padding: EdgeInsets.symmetric(
                               horizontal: 6.w, vertical: 2.h),
                           decoration: BoxDecoration(
-                            color: _getAnnouncementColor(announcement).withOpacity(0.1),
+                            color: _getAnnouncementColor(announcement)
+                                .withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4.r),
                           ),
                           child: ResponsiveText(
@@ -481,6 +698,30 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
+          if (showAllAnnouncements && announcement.isExpired) ...[
+            SizedBox(height: ResponsiveUtils.spacingS),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6.r),
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.warning, size: 14, color: Colors.grey[600]),
+                  SizedBox(width: 6.w),
+                  ResponsiveText(
+                    'This announcement has expired',
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (announcement.scheduleAffected.isNotEmpty) ...[
             SizedBox(height: ResponsiveUtils.spacingS),
             Container(
@@ -500,6 +741,52 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                     color: Colors.orange[700],
                     fontWeight: FontWeight.w500,
                   ),
+                ],
+              ),
+            ),
+          ],
+          if (showAllAnnouncements) ...[
+            SizedBox(height: ResponsiveUtils.spacingS),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(6.r),
+                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: Colors.blue[600],
+                  ),
+                  SizedBox(width: 6.w),
+                  ResponsiveText(
+                    'Created: ${_formatDate(announcement.dateCreated)}',
+                    fontSize: 11,
+                    color: Colors.blue[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  if (announcement.expiresAt != null) ...[
+                    SizedBox(width: 16.w),
+                    Icon(
+                      Icons.schedule,
+                      size: 14,
+                      color: announcement.isExpired
+                          ? Colors.red[600]
+                          : Colors.blue[600],
+                    ),
+                    SizedBox(width: 6.w),
+                    ResponsiveText(
+                      'Expires: ${_formatDate(announcement.expiresAt!)}',
+                      fontSize: 11,
+                      color: announcement.isExpired
+                          ? Colors.red[600]
+                          : Colors.blue[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -606,5 +893,206 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
         ],
       ),
     );
+  }
+
+  void _showTypeFilter() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Filter by Type'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<String>(
+                    title: Text('All Types'),
+                    value: 'All',
+                    groupValue: selectedFilterType,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('Info'),
+                    value: 'info',
+                    groupValue: selectedFilterType,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('Warning'),
+                    value: 'warning',
+                    groupValue: selectedFilterType,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('Urgent'),
+                    value: 'urgent',
+                    groupValue: selectedFilterType,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('Maintenance'),
+                    value: 'maintenance',
+                    groupValue: selectedFilterType,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('General'),
+                    value: 'general',
+                    groupValue: selectedFilterType,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _loadAnnouncements();
+              },
+              child: Text('Apply'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showPriorityFilter() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Filter by Priority'),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RadioListTile<String>(
+                    title: Text('All Priorities'),
+                    value: 'All',
+                    groupValue: selectedPriority,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedPriority = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('Low'),
+                    value: 'low',
+                    groupValue: selectedPriority,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedPriority = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('Medium'),
+                    value: 'medium',
+                    groupValue: selectedPriority,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedPriority = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('High'),
+                    value: 'high',
+                    groupValue: selectedPriority,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedPriority = newValue!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: Text('Critical'),
+                    value: 'critical',
+                    groupValue: selectedPriority,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedPriority = newValue!;
+                      });
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _loadAnnouncements();
+              },
+              child: Text('Apply'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _getFilterDisplayText() {
+    List<String> activeFilters = [];
+
+    if (selectedFilterType != 'All') {
+      activeFilters.add(selectedFilterType);
+    }
+    if (selectedPriority != 'All') {
+      activeFilters.add(selectedPriority);
+    }
+
+    return activeFilters.join(', ');
+  }
+
+  void _resetFilters() {
+    setState(() {
+      selectedFilterType = 'All';
+      selectedPriority = 'All';
+    });
+    _loadAnnouncements();
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

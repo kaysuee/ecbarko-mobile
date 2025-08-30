@@ -259,7 +259,7 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
         backgroundColor: Ec_BG_SKY_BLUE,
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Form(
               key: _formKey,
               child: Column(
@@ -267,7 +267,7 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
                   // Password Update Section
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(18),
@@ -307,7 +307,7 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         const Text(
                           'Change your password to keep your account secure',
                           style: TextStyle(
@@ -315,7 +315,7 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
                             color: Colors.grey,
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         _buildPasswordField(
                           'Current Password',
                           Icons.lock,
@@ -329,7 +329,7 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
                             });
                           },
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 20),
                         _buildPasswordField(
                           'New Password',
                           Icons.lock_outline,
@@ -342,7 +342,7 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
                             });
                           },
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 20),
                         _buildPasswordField(
                           'Confirm New Password',
                           Icons.lock_outline,
@@ -356,7 +356,7 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
                             });
                           },
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         if (isEditMode)
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -401,6 +401,83 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 32),
+
+                  // Forgot Password Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.help_outline,
+                                color: Colors.orange,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Forgot Password',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'If you\'ve forgotten your password, you can reset it through your email',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25)),
+                          ),
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/forgotPassword');
+                          },
+                          child: const Text(
+                            'Reset Password',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -436,6 +513,9 @@ class _AccountSecurityScreenState extends State<AccountSecurityScreen> {
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        isDense: false,
       ),
     );
   }

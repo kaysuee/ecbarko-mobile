@@ -9,6 +9,7 @@ import '../constants.dart';
 import 'welcome_screen.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
+import '../utils/date_format.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -49,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (token != null && !JwtDecoder.isExpired(token)) {
       // Set up token expiration check
       Duration timeUntilExpiry =
-          JwtDecoder.getExpirationDate(token).difference(DateTime.now());
+          JwtDecoder.getExpirationDate(token).difference(DateFormatUtil.getCurrentTime());
 
       if (timeUntilExpiry.isNegative) {
         // Token is already expired

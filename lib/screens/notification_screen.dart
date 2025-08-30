@@ -193,7 +193,7 @@ class _NotificationScreenState extends State<NotificationScreen>
     }
   }
 
-  Future<void> _deleteNotification(NotificationModel notification) async {
+  Future<void> _archiveNotification(NotificationModel notification) async {
     try {
       // Update local state first for immediate UI feedback
       setState(() {
@@ -201,7 +201,7 @@ class _NotificationScreenState extends State<NotificationScreen>
       });
 
       // Then update backend
-      await NotificationService.deleteNotification(
+      await NotificationService.archiveNotification(
         notificationId: notification.id,
         userId: userId!,
       );
@@ -211,19 +211,19 @@ class _NotificationScreenState extends State<NotificationScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Notification removed'),
+          content: Text('Notification archived'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
-      print('Error deleting notification: $e');
+      print('Error archiving notification: $e');
       // Revert local state if backend update failed
       setState(() {
         notifications.add(notification);
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to remove notification'),
+          content: Text('Failed to archive notification'),
           backgroundColor: Colors.red,
         ),
       );
@@ -238,160 +238,189 @@ class _NotificationScreenState extends State<NotificationScreen>
     final icon = notification.getIcon();
     final type = notification.type;
 
-    return ResponsiveContainer(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacingM),
-      padding: ResponsiveUtils.cardPadding,
-      decoration: BoxDecoration(
-        color: notification.isRead ? Colors.white : const Color(0xFFF1F9FF),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _handleNotificationTap(notification),
         borderRadius: BorderRadius.circular(ResponsiveUtils.cardRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+        splashColor: Colors.blue.withOpacity(0.1),
+        highlightColor: Colors.blue.withOpacity(0.05),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          margin: EdgeInsets.only(bottom: ResponsiveUtils.spacingM),
+          padding: ResponsiveUtils.cardPadding,
+          decoration: BoxDecoration(
+            color: notification.isRead ? Colors.grey[50] : Colors.white,
+            borderRadius: BorderRadius.circular(ResponsiveUtils.cardRadius),
+            boxShadow: [
+              BoxShadow(
+                color: notification.isRead
+                    ? Colors.black.withOpacity(0.03)
+                    : Colors.black.withOpacity(0.08),
+                blurRadius: notification.isRead ? 4 : 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: isUrgent
+                ? Border.all(color: Colors.red.withOpacity(0.3), width: 1)
+                : notification.isRead
+                    ? Border.all(color: Colors.grey[300]!, width: 0.5)
+                    : null,
           ),
-        ],
-        border: isUrgent
-            ? Border.all(color: Colors.red.withOpacity(0.3), width: 1)
-            : null,
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isCompact = constraints.maxWidth < 300;
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 300;
 
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: isCompact ? 40.w : 48.w,
-                height: isCompact ? 40.w : 48.w,
-                decoration: BoxDecoration(
-                  color: _getNotificationColor(notification).withOpacity(0.1),
-                  borderRadius:
-                      BorderRadius.circular(ResponsiveUtils.cardRadius),
-                ),
-                child: Center(
-                  child: ResponsiveText(
-                    icon,
-                    fontSize: isCompact ? 20 : 24,
-                  ),
-                ),
-              ),
-              SizedBox(width: ResponsiveUtils.spacingM),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ResponsiveText(
-                            title,
-                            fontSize: isCompact ? 14 : 15,
-                            fontWeight: FontWeight.w600,
-                            color: notification.isRead
-                                ? Colors.black87
-                                : Colors.black,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isUrgent)
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 6.w, vertical: 3.h),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6.r),
-                            ),
-                            child: ResponsiveText(
-                              'URGENT',
-                              color: Colors.red,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                      ],
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: isCompact ? 40.w : 48.w,
+                    height: isCompact ? 40.w : 48.w,
+                    decoration: BoxDecoration(
+                      color: _getNotificationColor(notification)
+                          .withOpacity(notification.isRead ? 0.05 : 0.1),
+                      borderRadius:
+                          BorderRadius.circular(ResponsiveUtils.cardRadius),
                     ),
-                    SizedBox(height: ResponsiveUtils.spacingS),
-                    ResponsiveText(
-                      message,
-                      fontSize: isCompact ? 13 : 14,
-                      color: Colors.grey[600],
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: ResponsiveUtils.spacingM),
-                    Row(
-                      children: [
-                        ResponsiveText(
-                          timeAgo,
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                        ),
-                        if (!notification.isRead) ...[
-                          SizedBox(width: ResponsiveUtils.spacingM),
-                          Container(
-                            width: 6.w,
-                            height: 6.w,
-                            decoration: const BoxDecoration(
-                              color: Colors.blue,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  switch (value) {
-                    case 'mark_read':
-                      if (!notification.isRead) {
-                        _markAsRead(notification);
-                      }
-                      break;
-                    case 'delete':
-                      _deleteNotification(notification);
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  if (!notification.isRead)
-                    PopupMenuItem(
-                      value: 'mark_read',
-                      child: Row(
-                        children: [
-                          Icon(Icons.check_circle_outline,
-                              size: ResponsiveUtils.iconSizeM),
-                          SizedBox(width: ResponsiveUtils.spacingM),
-                          ResponsiveText('Mark as Read'),
-                        ],
+                    child: Center(
+                      child: ResponsiveText(
+                        icon,
+                        fontSize: isCompact ? 20 : 24,
+                        color: notification.isRead ? Colors.grey[600] : null,
                       ),
                     ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
+                  ),
+                  SizedBox(width: ResponsiveUtils.spacingM),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.delete_outline,
-                            color: Colors.red, size: ResponsiveUtils.iconSizeM),
-                        SizedBox(width: ResponsiveUtils.spacingM),
-                        ResponsiveText('Delete', color: Colors.red),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ResponsiveText(
+                                title,
+                                fontSize: isCompact ? 14 : 15,
+                                fontWeight: FontWeight.w600,
+                                color: notification.isRead
+                                    ? Colors.grey[600]
+                                    : Colors.black,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isUrgent)
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 6.w, vertical: 3.h),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6.r),
+                                ),
+                                child: ResponsiveText(
+                                  'URGENT',
+                                  color: Colors.red,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacingS),
+                        ResponsiveText(
+                          message,
+                          fontSize: isCompact ? 13 : 14,
+                          color: notification.isRead
+                              ? Colors.grey[500]
+                              : Colors.grey[600],
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: ResponsiveUtils.spacingM),
+                        Row(
+                          children: [
+                            ResponsiveText(
+                              timeAgo,
+                              fontSize: 11,
+                              color: notification.isRead
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                            if (!notification.isRead) ...[
+                              SizedBox(width: ResponsiveUtils.spacingM),
+                              Container(
+                                width: 6.w,
+                                height: 6.w,
+                                decoration: const BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ] else ...[
+                              SizedBox(width: ResponsiveUtils.spacingM),
+                              Icon(
+                                Icons.check_circle,
+                                size: 12.w,
+                                color: Colors.green[600],
+                              ),
+                            ],
+                          ],
+                        ),
                       ],
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      switch (value) {
+                        case 'mark_read':
+                          if (!notification.isRead) {
+                            _markAsRead(notification);
+                          }
+                          break;
+                        case 'archive':
+                          _archiveNotification(notification);
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      if (!notification.isRead)
+                        PopupMenuItem(
+                          value: 'mark_read',
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle_outline,
+                                  size: ResponsiveUtils.iconSizeM),
+                              SizedBox(width: ResponsiveUtils.spacingM),
+                              ResponsiveText('Mark as Read'),
+                            ],
+                          ),
+                        ),
+                      PopupMenuItem(
+                        value: 'archive',
+                        child: Row(
+                          children: [
+                            Icon(Icons.archive_outlined,
+                                color: Colors.orange,
+                                size: ResponsiveUtils.iconSizeM),
+                            SizedBox(width: ResponsiveUtils.spacingM),
+                            ResponsiveText('Archive', color: Colors.orange),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Icon(
+                      Icons.more_vert,
+                      color: Colors.grey[600],
+                      size: ResponsiveUtils.iconSizeM,
                     ),
                   ),
                 ],
-                child: Icon(
-                  Icons.more_vert,
-                  color: Colors.grey[600],
-                  size: ResponsiveUtils.iconSizeM,
-                ),
-              ),
-            ],
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -440,16 +469,16 @@ class _NotificationScreenState extends State<NotificationScreen>
           size: ResponsiveUtils.iconSizeM,
         ),
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.history,
-              color: Colors.white,
-              size: ResponsiveUtils.iconSizeM,
+          if (notifications.isNotEmpty) ...[
+            IconButton(
+              icon: Icon(
+                Icons.mark_email_read,
+                color: Colors.white,
+                size: ResponsiveUtils.iconSizeM,
+              ),
+              onPressed: () => _showMarkAllAsReadDialog(),
+              tooltip: 'Mark All as Read',
             ),
-            onPressed: () => _showNotificationHistory(),
-            tooltip: 'View History',
-          ),
-          if (notifications.isNotEmpty)
             IconButton(
               icon: Icon(
                 Icons.clear_all,
@@ -459,6 +488,16 @@ class _NotificationScreenState extends State<NotificationScreen>
               onPressed: () => _showClearAllDialog(),
               tooltip: 'Clear Notifications',
             ),
+          ],
+          IconButton(
+            icon: Icon(
+              Icons.history,
+              color: Colors.white,
+              size: ResponsiveUtils.iconSizeM,
+            ),
+            onPressed: () => _showNotificationHistory(),
+            tooltip: 'View History',
+          ),
         ],
       ),
       body: ResponsiveContainer(
@@ -466,7 +505,7 @@ class _NotificationScreenState extends State<NotificationScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Filter Section with Improved Design
+            // Filter Section with Clean Design (exactly like schedule screen)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -474,29 +513,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                   child: Padding(
                     padding: EdgeInsets.only(right: 5.w),
                     child: ElevatedButton.icon(
-                      onPressed: () => _showReadUnreadFilter(),
-                      icon: const Icon(Icons.mark_email_read,
-                          color: Colors.white),
-                      label: Text('Read/Unread',
-                          style:
-                              TextStyle(color: Colors.white, fontSize: 14.sp)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Ec_PRIMARY,
-                        padding: EdgeInsets.symmetric(vertical: 12.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.r),
-                        ),
-                        elevation: 3,
-                        shadowColor: Ec_PRIMARY.withOpacity(0.3),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 5.w),
-                    child: ElevatedButton.icon(
-                      onPressed: _showTypeFilter,
+                      onPressed: () => _showTypeFilter(),
                       icon: const Icon(Icons.category, color: Colors.white),
                       label: Text('Type',
                           style:
@@ -507,68 +524,31 @@ class _NotificationScreenState extends State<NotificationScreen>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30.r),
                         ),
-                        elevation: 3,
-                        shadowColor: Ec_PRIMARY.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 5.w),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showStatusFilter(),
+                      icon: const Icon(Icons.sort, color: Colors.white),
+                      label: Text('Filter',
+                          style:
+                              TextStyle(color: Colors.white, fontSize: 14.sp)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Ec_PRIMARY,
+                        padding: EdgeInsets.symmetric(vertical: 12.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.r),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-            // Show selected filters and clear option
-            if (selectedFilterType != 'All' || selectedReadStatus != 'All') ...[
-              SizedBox(height: 12.h),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(color: Ec_PRIMARY.withOpacity(0.3)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.filter_alt,
-                      color: Ec_PRIMARY,
-                      size: 16.sp,
-                    ),
-                    SizedBox(width: 8.w),
-                    Text(
-                      'Filtered: ${_getFilterDisplayText()}',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Ec_PRIMARY,
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    GestureDetector(
-                      onTap: _resetFilters,
-                      child: Container(
-                        padding: EdgeInsets.all(4.w),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.red,
-                          size: 14.sp,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
             SizedBox(height: ResponsiveUtils.spacingM),
             Expanded(
               child: RefreshIndicator(
@@ -638,7 +618,7 @@ class _NotificationScreenState extends State<NotificationScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Archive All Notifications'),
+        title: const Text('Clear All Notifications'),
         content: const Text(
           'This will move all notifications to your notification history. You can still view them later, but they won\'t appear in your main notifications list.',
         ),
@@ -651,10 +631,10 @@ class _NotificationScreenState extends State<NotificationScreen>
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
             onPressed: () async {
               Navigator.pop(context);
-              await _archiveAllNotifications();
+              await _clearAllNotifications();
             },
-            child: const Text('Archive All',
-                style: TextStyle(color: Colors.white)),
+            child:
+                const Text('Clear All', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -670,9 +650,9 @@ class _NotificationScreenState extends State<NotificationScreen>
     );
   }
 
-  Future<void> _archiveAllNotifications() async {
+  Future<void> _clearAllNotifications() async {
     try {
-      // Mark all notifications as archived in the backend
+      // Mark all notifications as archived in the backend (moved to history)
       for (final notification in notifications) {
         await NotificationService.archiveNotification(
           notificationId: notification.id,
@@ -687,111 +667,26 @@ class _NotificationScreenState extends State<NotificationScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('All notifications archived'),
+          content: Text('All notifications cleared and moved to history'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
-      print('Error archiving notifications: $e');
+      print('Error clearing notifications: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to archive some notifications'),
+          content: Text('Failed to clear some notifications'),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 
-  void _showReadUnreadFilter() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Ec_PRIMARY.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: Icon(
-                  Icons.mark_email_read,
-                  color: Ec_PRIMARY,
-                  size: 20,
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Text(
-                'Filter by Read Status',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18.sp,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildFilterOption(
-                  'All', 'All notifications', Icons.all_inclusive, Ec_PRIMARY),
-              _buildFilterOption('Read', 'Read notifications',
-                  Icons.mark_email_read, Colors.green),
-              _buildFilterOption('Unread', 'Unread notifications',
-                  Icons.mark_email_unread, Colors.orange),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterOption(
-      String value, String label, IconData icon, Color color) {
-    final isSelected = (value == 'All' && selectedReadStatus == 'All') ||
-        (value == 'Read' && selectedReadStatus == 'Read') ||
-        (value == 'Unread' && selectedReadStatus == 'Unread');
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 8.h),
-      decoration: BoxDecoration(
-        color: isSelected ? color.withOpacity(0.1) : Colors.grey[50],
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: isSelected ? color : Colors.grey[300]!,
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: RadioListTile<String>(
-        value: value,
-        groupValue: selectedReadStatus,
-        onChanged: (newValue) {
-          setState(() {
-            selectedReadStatus = newValue!;
-          });
-          Navigator.pop(context);
-        },
-        title: Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            SizedBox(width: 12.w),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? color : Colors.black87,
-              ),
-            ),
-          ],
-        ),
-        activeColor: color,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      ),
-    );
+  void _resetFilters() {
+    setState(() {
+      selectedFilterType = 'All';
+      selectedReadStatus = 'All';
+    });
   }
 
   void _showTypeFilter() {
@@ -804,99 +699,250 @@ class _NotificationScreenState extends State<NotificationScreen>
           ),
           title: Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: Ec_PRIMARY.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10.r),
-                ),
-                child: Icon(
-                  Icons.category,
-                  color: Ec_PRIMARY,
-                  size: 20,
-                ),
+              Icon(
+                Icons.category,
+                color: Ec_PRIMARY,
+                size: 24.w,
               ),
               SizedBox(width: 12.w),
               Text(
                 'Filter by Type',
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
                   fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTypeFilterOption(
-                  'All', 'All types', Icons.all_inclusive, Ec_PRIMARY),
-              _buildTypeFilterOption('Booking', 'Booking notifications',
-                  Icons.confirmation_number, Colors.green),
-              _buildTypeFilterOption('Card', 'Card notifications',
-                  Icons.credit_card, Colors.purple),
-              _buildTypeFilterOption('Profile', 'Profile notifications',
-                  Icons.person, Colors.blue),
-              _buildTypeFilterOption('System', 'System notifications',
-                  Icons.settings, Colors.orange),
-            ],
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildFilterOption(
+                    context: context,
+                    title: 'All Types',
+                    subtitle: 'Show all notifications',
+                    value: 'All',
+                    groupValue: selectedFilterType,
+                    icon: Icons.all_inclusive,
+                    color: Colors.blue,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  _buildFilterOption(
+                    context: context,
+                    title: 'Booking',
+                    subtitle: 'Booking updates & reminders',
+                    value: 'Booking',
+                    groupValue: selectedFilterType,
+                    icon: Icons.book_online,
+                    color: Colors.green,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  _buildFilterOption(
+                    context: context,
+                    title: 'Card',
+                    subtitle: 'Card transactions & updates',
+                    value: 'Card',
+                    groupValue: selectedFilterType,
+                    icon: Icons.credit_card,
+                    color: Colors.orange,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  _buildFilterOption(
+                    context: context,
+                    title: 'Profile',
+                    subtitle: 'Account & security updates',
+                    value: 'Profile',
+                    groupValue: selectedFilterType,
+                    icon: Icons.person,
+                    color: Colors.purple,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                  _buildFilterOption(
+                    context: context,
+                    title: 'System',
+                    subtitle: 'App updates & announcements',
+                    value: 'System',
+                    groupValue: selectedFilterType,
+                    icon: Icons.settings,
+                    color: Colors.red,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedFilterType = newValue!;
+                      });
+                    },
+                  ),
+                ],
+              );
+            },
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16.sp,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Ec_PRIMARY,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Apply',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildTypeFilterOption(
-      String value, String label, IconData icon, Color color) {
-    final isSelected = (value == 'All' && selectedFilterType == 'All') ||
-        (value == 'Booking' && selectedFilterType == 'Booking') ||
-        (value == 'Card' && selectedFilterType == 'Card') ||
-        (value == 'Profile' && selectedFilterType == 'Profile') ||
-        (value == 'System' && selectedFilterType == 'System');
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 8.h),
-      decoration: BoxDecoration(
-        color: isSelected ? color.withOpacity(0.1) : Colors.grey[50],
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: isSelected ? color : Colors.grey[300]!,
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: RadioListTile<String>(
-        value: value,
-        groupValue: selectedFilterType,
-        onChanged: (newValue) {
-          setState(() {
-            selectedFilterType = newValue!;
-          });
-          Navigator.pop(context);
-        },
-        title: Row(
-          children: [
-            Icon(icon, color: color, size: 20),
-            SizedBox(width: 12.w),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? color : Colors.black87,
+  void _showStatusFilter() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.r),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.sort,
+                color: Ec_PRIMARY,
+                size: 24.w,
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                'Filter by Status',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildFilterOption(
+                    context: context,
+                    title: 'All Status',
+                    subtitle: 'Show all notifications',
+                    value: 'All',
+                    groupValue: selectedReadStatus,
+                    icon: Icons.all_inclusive,
+                    color: Colors.blue,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedReadStatus = newValue!;
+                      });
+                    },
+                  ),
+                  _buildFilterOption(
+                    context: context,
+                    title: 'Read',
+                    subtitle: 'Notifications you\'ve seen',
+                    value: 'Read',
+                    groupValue: selectedReadStatus,
+                    icon: Icons.check_circle,
+                    color: Colors.green,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedReadStatus = newValue!;
+                      });
+                    },
+                  ),
+                  _buildFilterOption(
+                    context: context,
+                    title: 'Unread',
+                    subtitle: 'New notifications',
+                    value: 'Unread',
+                    groupValue: selectedReadStatus,
+                    icon: Icons.mark_email_unread,
+                    color: Colors.orange,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedReadStatus = newValue!;
+                      });
+                    },
+                  ),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16.sp,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Ec_PRIMARY,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Apply',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
-        ),
-        activeColor: color,
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      ),
+        );
+      },
     );
-  }
-
-  void _resetFilters() {
-    setState(() {
-      selectedFilterType = 'All';
-      selectedReadStatus = 'All';
-    });
   }
 
   String _getFilterDisplayText() {
@@ -910,5 +956,196 @@ class _NotificationScreenState extends State<NotificationScreen>
     }
 
     return activeFilters.join(' + ');
+  }
+
+  Widget _buildFilterOption({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required String value,
+    required String groupValue,
+    required IconData icon,
+    required Color color,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final isSelected = value == groupValue;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 8.h),
+      decoration: BoxDecoration(
+        color: isSelected ? color.withOpacity(0.1) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isSelected ? color : Colors.grey[300]!,
+          width: isSelected ? 2 : 1,
+        ),
+      ),
+      child: RadioListTile<String>(
+        value: value,
+        groupValue: groupValue,
+        onChanged: onChanged,
+        activeColor: color,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        title: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 20.w,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? color : Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: isSelected
+                          ? color.withOpacity(0.8)
+                          : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        subtitle: null,
+      ),
+    );
+  }
+
+  void _showMarkAllAsReadDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Mark All as Read'),
+          content: const Text(
+            'Are you sure you want to mark all notifications as read? This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              onPressed: () async {
+                Navigator.pop(context);
+                await _markAllAsRead();
+              },
+              child: const Text('Mark All as Read',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _markAllAsRead() async {
+    try {
+      // Update local state first for immediate UI feedback
+      setState(() {
+        for (int i = 0; i < notifications.length; i++) {
+          if (!notifications[i].isRead) {
+            notifications[i] = NotificationModel(
+              id: notifications[i].id,
+              type: notifications[i].type,
+              title: notifications[i].title,
+              message: notifications[i].message,
+              userId: notifications[i].userId,
+              additionalData: notifications[i].additionalData,
+              createdAt: notifications[i].createdAt,
+              isRead: true,
+              isArchived: notifications[i].isArchived,
+            );
+          }
+        }
+      });
+
+      // Then update backend
+      await NotificationService.markAllNotificationsAsRead(userId: userId!);
+
+      // Refresh notifications to ensure sync
+      await _loadNotifications();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All notifications marked as read'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error marking all notifications as read: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to mark all notifications as read'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Handle notification tap to mark as read
+  Future<void> _handleNotificationTap(NotificationModel notification) async {
+    if (!notification.isRead) {
+      // Show immediate visual feedback
+      setState(() {
+        // Temporarily change the notification to show it's being processed
+        final index = notifications.indexWhere((n) => n.id == notification.id);
+        if (index != -1) {
+          notifications[index] = NotificationModel(
+            id: notification.id,
+            type: notification.type,
+            title: notification.title,
+            message: notification.message,
+            userId: notification.userId,
+            additionalData: notification.additionalData,
+            createdAt: notification.createdAt,
+            isRead: true,
+            isArchived: notification.isArchived,
+          );
+        }
+      });
+
+      // Mark as read in backend
+      await _markAsRead(notification);
+    }
+
+    // You can add additional functionality here like:
+    // - Navigate to a specific screen based on notification type
+    // - Show detailed notification view
+    // - Handle notification-specific actions
+
+    // For now, just mark as read and show a subtle feedback
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${notification.title} - marked as read'),
+          backgroundColor: Colors.blue,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }

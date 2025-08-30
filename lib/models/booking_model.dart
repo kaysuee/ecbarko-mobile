@@ -1,5 +1,8 @@
 // File: models/booking_model.dart
 
+import 'package:flutter/material.dart';
+import '../utils/date_format.dart';
+
 class PassengerModel {
   final String name;
   final String ticketType;
@@ -220,7 +223,7 @@ class BookingModel {
     try {
       createdDate = DateTime.parse(json['createdAt'] ?? '');
     } catch (e) {
-      createdDate = DateTime.now();
+      createdDate = DateFormatUtil.getCurrentTime();
     }
 
     return BookingModel(
@@ -315,4 +318,6 @@ class BookingModel {
       transactionId: transactionId ?? this.transactionId,
     );
   }
+
+
 }

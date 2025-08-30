@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import '../utils/date_format.dart';
 
 String getBaseUrl() {
   //return 'https://ecbarko.onrender.com';
@@ -44,7 +45,7 @@ class NotificationService {
         'message': message,
         'userId': userId,
         'additionalData': additionalData ?? {},
-        'createdAt': DateTime.now().toIso8601String(),
+        'createdAt': DateFormatUtil.getCurrentTime().toIso8601String(),
         'isRead': false,
       };
 
@@ -252,15 +253,14 @@ class NotificationService {
         final departDate = DateTime.parse(booking['departDate']);
         final departTime = booking['departTime'];
 
-        // Parse departure time
-        final timeParts = departTime.split(':');
-        final departureDateTime = DateTime(
-          departDate.year,
-          departDate.month,
-          departDate.day,
-          int.parse(timeParts[0]),
-          int.parse(timeParts[1]),
-        );
+        // Parse departure time - handle both "HH:MM" and "HH AM/PM" formats
+        final departureDateTime = _parseDepartureTime(departDate, departTime);
+
+        if (departureDateTime == null) {
+          print(
+              'Warning: Could not parse departure time: $departTime for booking: ${booking['bookingId']}');
+          continue; // Skip this booking if time parsing fails
+        }
 
         // Check if departure is within 1 hour
         final timeDifference = departureDateTime.difference(now);
@@ -364,6 +364,41 @@ class NotificationService {
       }
     } catch (e) {
       print('Error marking notification as read: $e');
+    }
+  }
+
+  // Mark all notifications as read for a user
+  static Future<void> markAllNotificationsAsRead({
+    required String userId,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('No token available for marking all notifications as read');
+        return;
+      }
+
+      final response = await http.put(
+        Uri.parse('${getBaseUrl()}/api/notifications/$userId/read-all'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'userId': userId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('All notifications marked as read for user: $userId');
+      } else {
+        print(
+            'Failed to mark all notifications as read: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error marking all notifications as read: $e');
     }
   }
 
@@ -484,6 +519,66 @@ class NotificationService {
       }
     } catch (e) {
       print('Error deleting notification: $e');
+    }
+  }
+
+  // Parse departure time from various formats
+  static DateTime? _parseDepartureTime(DateTime departDate, String departTime) {
+    try {
+      // Remove any extra whitespace
+      final cleanTime = departTime.trim();
+
+      // Try to parse as "HH:MM" format first
+      if (cleanTime.contains(':')) {
+        final timeParts = cleanTime.split(':');
+        if (timeParts.length == 2) {
+          final hour = int.parse(timeParts[0]);
+          final minute = int.parse(timeParts[1]);
+
+          if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+            return DateTime(
+              departDate.year,
+              departDate.month,
+              departDate.day,
+              hour,
+              minute,
+            );
+          }
+        }
+      }
+
+      // Try to parse as "HH AM/PM" format
+      if (cleanTime.contains('AM') || cleanTime.contains('PM')) {
+        final timeStr = cleanTime.replaceAll(' ', '');
+        final isPM = timeStr.contains('PM');
+        final timeOnly = timeStr.replaceAll('AM', '').replaceAll('PM', '');
+
+        int hour = int.parse(timeOnly);
+
+        // Convert 12-hour to 24-hour format
+        if (isPM && hour != 12) {
+          hour += 12;
+        } else if (!isPM && hour == 12) {
+          hour = 0;
+        }
+
+        if (hour >= 0 && hour <= 23) {
+          return DateTime(
+            departDate.year,
+            departDate.month,
+            departDate.day,
+            hour,
+            0, // Default to 0 minutes for AM/PM format
+          );
+        }
+      }
+
+      // If all parsing attempts fail, return null
+      print('Warning: Could not parse time format: $departTime');
+      return null;
+    } catch (e) {
+      print('Error parsing departure time: $departTime - $e');
+      return null;
     }
   }
 }

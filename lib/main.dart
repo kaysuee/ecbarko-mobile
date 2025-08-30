@@ -7,6 +7,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:EcBarko/services/notification_scheduler.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import '/screens/home_screen.dart';
 import '/screens/dashboard_screen.dart';
@@ -21,6 +23,10 @@ import 'package:EcBarko/screens/otp_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize timezone for Philippine time (Asia/Manila)
+  await initializeDateFormatting('en_US', null);
+
   final prefs = await SharedPreferences.getInstance();
   var isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
   final token = prefs.getString('token');

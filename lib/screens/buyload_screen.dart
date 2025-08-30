@@ -936,127 +936,115 @@ class _BuyLoadScreenState extends State<BuyLoadScreen> {
   }
 
   Widget _buildRFIDImage(BuildContext context) {
-    print('🖼️ Building RFID Image...');
-    try {
-      return BounceTapWrapper(
-        onTap: () =>
-            _navigateTo(context, const RFIDCardScreen(showBackButton: true)),
-        child: Card(
-          color: Ec_PRIMARY,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-          elevation: 8,
-          margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-          child: Container(
-            width: double.infinity,
-            // height: 220.h,
-            padding: EdgeInsets.all(18.w),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16.r),
-              gradient: const RadialGradient(
-                center: Alignment.center,
-                radius: 1.0,
-                colors: [
-                  Color(0xFF1A5A91),
-                  Color(0xFF142F60),
-                ],
-                stops: [0.3, 1.0],
-              ),
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Use a fraction of screen height for the card height
+    final cardHeight = screenHeight * 0.28; // ~28% of screen height
+
+    return BounceTapWrapper(
+      onTap: () =>
+          _navigateTo(context, const RFIDCardScreen(showBackButton: true)),
+      child: Card(
+        color: Ec_PRIMARY,
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(screenWidth * 0.04), // 4% of width
+        ),
+        elevation: 8,
+        margin: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.03, // 3% horizontal margin
+          vertical: screenHeight * 0.01, // 1% vertical margin
+        ),
+        child: Container(
+          width: double.infinity,
+          height: cardHeight,
+          padding: EdgeInsets.all(screenWidth * 0.045), // 4.5% padding
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(screenWidth * 0.04),
+            gradient: const RadialGradient(
+              center: Alignment.center,
+              radius: 1.0,
+              colors: [
+                Color(0xFF1A5A91),
+                Color(0xFF142F60),
+              ],
+              stops: [0.3, 1.0],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Image.asset(
-                      'assets/images/logoWhite.png',
-                      width: 50.w, // reduced from 60.w to 50.w
-                      height: 50.w,
-                    ),
-                    Text(
-                      'RFID CARD',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22.sp, // reduced from 25.sp to 22.sp
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 30.h),
-                Row(
-                  children: [
-                    Text(
-                      'Available Balance',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 16.sp, // reduced from 18.sp to 16.sp
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          isBalanceVisible = !isBalanceVisible;
-                        });
-                      },
-                      child: Icon(
-                        isBalanceVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                        color: Colors.white.withOpacity(0.8),
-                        size: 18.sp, // reduced from 20.sp to 18.sp
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 4.h),
-                Container(
-                  width: double.infinity,
-                  child: Text(
-                    isBalanceVisible == true
-                        ? '₱${(cardData?['balance']?.toString() ?? '0').replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}'
-                        : '•••••••••',
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Image.asset(
+                    'assets/images/ecbarkowhitelogo.png',
+                    width: screenWidth * 0.15, // reduced from 0.13 to 0.11
+                    height: screenWidth * 0.15,
+                  ),
+                  Text(
+                    'RFID CARD',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 28.sp, // reduced from 40.sp to 28.sp
-                      fontWeight: FontWeight.bold,
+                      fontSize:
+                          screenWidth * 0.070, // reduced from 0.065 to 0.055
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
+                ],
+              ),
+              SizedBox(height: screenHeight * 0.06), // 6% spacing - moved down
+              Row(
+                children: [
+                  Text(
+                    'Available Balance',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: screenWidth * 0.04,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(width: screenWidth * 0.02),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        isBalanceVisible = !isBalanceVisible;
+                      });
+                    },
+                    child: Icon(
+                      isBalanceVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      color: Colors.white.withOpacity(0.8),
+                      size: screenWidth * 0.045,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: screenHeight * 0.01),
+              Flexible(
+                child: Text(
+                  isBalanceVisible
+                      ? '₱${(cardData?['balance']?.toString() ?? '0').replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},')}'
+                      : '••••••',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: screenWidth * 0.08,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-      );
-    } catch (e, stackTrace) {
-      print('❌ Error in _buildRFIDImage: $e');
-      print('❌ Stack trace: $stackTrace');
-      return Container(
-        padding: EdgeInsets.all(16.w),
-        decoration: BoxDecoration(
-          color: Colors.red[100],
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(color: Colors.red),
-        ),
-        child: Column(
-          children: [
-            const Icon(Icons.error, color: Colors.red),
-            const SizedBox(height: 8),
-            Text('Error building RFID image: $e'),
-          ],
-        ),
-      );
-    }
+      ),
+    );
   }
-
   // Widget _buildRFIDImage(BuildContext context) {
   //   return BounceTapWrapper(
   //     onTap: () =>

@@ -1,4 +1,7 @@
 // announcement_model.dart
+import 'package:flutter/material.dart';
+import '../utils/date_format.dart';
+
 class AnnouncementModel {
   final String id;
   final String title;
@@ -144,7 +147,8 @@ class AnnouncementModel {
   // Check if announcement is expired
   bool get isExpired {
     if (expiresAt == null) return false;
-    return DateTime.now().isAfter(expiresAt!);
+    final now = DateFormatUtil.getCurrentTime();
+    return now.isAfter(expiresAt!);
   }
 
   // Check if announcement requires action

@@ -12,8 +12,13 @@ class Transaction {
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
+    // Parse the date and convert to Philippine timezone (UTC+8)
+    DateTime philippineTime = DateTime.parse(json['dateTransaction'])
+        .toUtc()
+        .add(const Duration(hours: 8));
+
     return Transaction(
-      date: DateTime.parse(json['dateTransaction']),
+      date: philippineTime,
       type: json['type'], // or another field like 'type' if it exists
       amount: (json['payment'] as num).toDouble(),
       status: json['status'],

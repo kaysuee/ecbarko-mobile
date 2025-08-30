@@ -7,7 +7,7 @@ String getBaseUrl() {
 }
 
 class AnnouncementService {
-  // Get user announcements
+  // Get user announcements (active only)
   static Future<List<Map<String, dynamic>>> getUserAnnouncements({
     required String userId,
     String? type,
@@ -27,8 +27,12 @@ class AnnouncementService {
       if (type != null) queryParams['type'] = type;
       if (priority != null) queryParams['priority'] = priority;
 
-      final uri = Uri.parse('${getBaseUrl()}/api/announcements/$userId')
-          .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+      final uri = Uri.parse('${getBaseUrl()}/api/announcement/$userId').replace(
+          queryParameters: queryParams.isNotEmpty ? queryParams : null);
+
+      print('🌐 Fetching from URL: $uri');
+      print('🔑 Token: ${token?.substring(0, 20)}...');
+      print('🔍 Query parameters: $queryParams');
 
       final response = await http.get(
         uri,
@@ -37,6 +41,13 @@ class AnnouncementService {
           'Content-Type': 'application/json',
         },
       );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
+
+      if (response.statusCode != 200) {
+        print('❌ Error response: ${response.reasonPhrase}');
+      }
 
       if (response.statusCode == 200) {
         final List<dynamic> announcements = jsonDecode(response.body);
@@ -47,6 +58,64 @@ class AnnouncementService {
       }
     } catch (e) {
       print('Error fetching announcements: $e');
+      return [];
+    }
+  }
+
+  // Get all announcements including past ones
+  static Future<List<Map<String, dynamic>>> getAllAnnouncements({
+    required String userId,
+    String? type,
+    String? priority,
+    bool includeExpired = true,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) {
+        print('No token available for fetching all announcements');
+        return [];
+      }
+
+      // Build query parameters
+      final queryParams = <String, String>{};
+      if (type != null) queryParams['type'] = type;
+      if (priority != null) queryParams['priority'] = priority;
+      if (includeExpired) queryParams['includeExpired'] = 'true';
+
+      final uri = Uri.parse('${getBaseUrl()}/api/announcement/all/$userId')
+          .replace(
+              queryParameters: queryParams.isNotEmpty ? queryParams : null);
+
+      print('🌐 Fetching all announcements from URL: $uri');
+      print('🔑 Token: ${token?.substring(0, 20)}...');
+      print('🔍 Query parameters: $queryParams');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📄 Response body: ${response.body}');
+
+      if (response.statusCode != 200) {
+        print('❌ Error response: ${response.reasonPhrase}');
+      }
+
+      if (response.statusCode == 200) {
+        final List<dynamic> announcements = jsonDecode(response.body);
+        return announcements.cast<Map<String, dynamic>>();
+      } else {
+        print('Failed to fetch all announcements: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching all announcements: $e');
       return [];
     }
   }
@@ -66,7 +135,7 @@ class AnnouncementService {
       }
 
       final response = await http.put(
-        Uri.parse('${getBaseUrl()}/api/announcements/$announcementId/read'),
+        Uri.parse('${getBaseUrl()}/api/announcement/$announcementId/read'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -98,7 +167,7 @@ class AnnouncementService {
       }
 
       final response = await http.get(
-        Uri.parse('${getBaseUrl()}/api/announcements/stats/overview'),
+        Uri.parse('${getBaseUrl()}/api/announcement/stats/overview'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -152,7 +221,7 @@ class AnnouncementService {
       };
 
       final response = await http.post(
-        Uri.parse('${getBaseUrl()}/api/announcements'),
+        Uri.parse('${getBaseUrl()}/api/announcement'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -191,7 +260,7 @@ class AnnouncementService {
       };
 
       final response = await http.put(
-        Uri.parse('${getBaseUrl()}/api/announcements/$announcementId/status'),
+        Uri.parse('${getBaseUrl()}/api/announcement/$announcementId/status'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

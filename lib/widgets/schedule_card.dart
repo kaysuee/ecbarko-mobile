@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
 import '../screens/bookingdetails_screen.dart';
-import '../utils/date_formatter.dart';
+import '../utils/date_format.dart';
 
 class ScheduleCard extends StatelessWidget {
   final String schedcde;
@@ -297,7 +297,7 @@ class ScheduleCard extends StatelessWidget {
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
-                                '${DateFormatter.formatDateAbbreviated(departDate)} ${DateFormatter.formatTime(departTime)}',
+                                '${DateFormatUtil.formatDateAbbreviated(departDate)} ${DateFormatUtil.formatTime(departTime)}',
                                 style: TextStyle(
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.bold,
@@ -342,7 +342,7 @@ class ScheduleCard extends StatelessWidget {
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
-                                '${DateFormatter.formatDateAbbreviated(arriveDate)} ${DateFormatter.formatTime(arriveTime)}',
+                                '${DateFormatUtil.formatDateAbbreviated(arriveDate)} ${DateFormatUtil.formatTime(arriveTime)}',
                                 style: TextStyle(
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.bold,
@@ -611,7 +611,7 @@ class ScheduleCard extends StatelessWidget {
                                         ),
                                         SizedBox(height: 4.h),
                                         Text(
-                                          '${DateFormatter.formatDateAbbreviated(departDate)} at ${DateFormatter.formatTime(departTime)}',
+                                          '${DateFormatUtil.formatDateAbbreviated(departDate)} at ${DateFormatUtil.formatTime(departTime)}',
                                           style: TextStyle(
                                             fontSize: 14.sp,
                                             fontWeight: FontWeight.w600,
@@ -635,7 +635,7 @@ class ScheduleCard extends StatelessWidget {
                                         ),
                                         SizedBox(height: 4.h),
                                         Text(
-                                          '${DateFormatter.formatDateAbbreviated(arriveDate)} at ${DateFormatter.formatTime(arriveTime)}',
+                                          '${DateFormatUtil.formatDateAbbreviated(arriveDate)} at ${DateFormatUtil.formatTime(arriveTime)}',
                                           style: TextStyle(
                                             fontSize: 14.sp,
                                             fontWeight: FontWeight.w600,

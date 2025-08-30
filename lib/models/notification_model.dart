@@ -1,4 +1,7 @@
 // notification_model.dart
+import 'package:flutter/material.dart';
+import '../utils/date_format.dart';
+
 class NotificationModel {
   final String id;
   final String type;
@@ -33,6 +36,29 @@ class NotificationModel {
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       isRead: json['isRead'] ?? false,
       isArchived: json['isArchived'] ?? false,
+    );
+  }
+
+  NotificationModel copyWith({
+    String? notificationId,
+    String? userId,
+    String? title,
+    String? body,
+    String? type,
+    Map<String, dynamic>? data,
+    DateTime? createdAt,
+    bool? isRead,
+    String? imageUrl,
+  }) {
+    return NotificationModel(
+      id: notificationId ?? this.id,
+      type: type ?? this.type,
+      title: title ?? this.title,
+      message: body ?? this.message,
+      userId: userId ?? this.userId,
+      additionalData: data ?? this.additionalData,
+      createdAt: createdAt ?? this.createdAt,
+      isRead: isRead ?? this.isRead,
     );
   }
 
@@ -119,5 +145,11 @@ class NotificationModel {
   // Check if action is required
   bool get requiresAction {
     return additionalData['actionRequired'] == true;
+  }
+
+  bool get isRecent {
+    final now = DateFormatUtil.getCurrentTime();
+    final difference = now.difference(createdAt).inDays;
+    return difference <= 7; // Consider notifications from last 7 days as recent
   }
 }

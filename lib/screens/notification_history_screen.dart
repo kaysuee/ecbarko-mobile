@@ -14,7 +14,8 @@ class NotificationHistoryScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<NotificationHistoryScreen> createState() => _NotificationHistoryScreenState();
+  State<NotificationHistoryScreen> createState() =>
+      _NotificationHistoryScreenState();
 }
 
 class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
@@ -33,7 +34,8 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
         isLoading = true;
       });
 
-      final notificationsData = await NotificationService.getArchivedNotifications(
+      final notificationsData =
+          await NotificationService.getArchivedNotifications(
         userId: widget.userId,
       );
 
@@ -92,55 +94,6 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Section
-            Container(
-              padding: EdgeInsets.all(ResponsiveUtils.spacingM),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.grey.withOpacity(0.1),
-                    Colors.blue.withOpacity(0.05)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: Colors.grey.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.history,
-                    color: Colors.grey[600],
-                    size: ResponsiveUtils.iconSizeM,
-                  ),
-                  SizedBox(width: ResponsiveUtils.spacingS),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ResponsiveText(
-                          'Archived Notifications',
-                          fontSize: ResponsiveUtils.fontSizeL,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                        SizedBox(height: ResponsiveUtils.spacingS),
-                        ResponsiveText(
-                          '${archivedNotifications.length} archived notifications',
-                          fontSize: ResponsiveUtils.fontSizeS,
-                          color: Colors.grey[600],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: ResponsiveUtils.spacingM),
             // Notifications List
             Expanded(
               child: RefreshIndicator(
@@ -167,88 +120,210 @@ class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
     final message = notification.message;
     final timeAgo = notification.getTimeAgo();
     final icon = notification.getIcon();
+    final type = notification.type;
 
     return Container(
-      margin: EdgeInsets.only(bottom: ResponsiveUtils.spacingM),
-      padding: ResponsiveUtils.cardPadding,
+      margin: EdgeInsets.only(bottom: 4.h),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(ResponsiveUtils.cardRadius),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
         border: Border.all(
-          color: Colors.grey.withOpacity(0.2),
-          width: 1,
+          color: Colors.grey.withOpacity(0.1),
+          width: 0.5,
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48.w,
-            height: 48.w,
-            decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(ResponsiveUtils.cardRadius),
-            ),
-            child: Center(
-              child: ResponsiveText(
-                icon,
-                fontSize: 24,
-              ),
-            ),
-          ),
-          SizedBox(width: ResponsiveUtils.spacingM),
-          Expanded(
-            child: Column(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8.r),
+          onTap: () {
+            // You can add tap functionality here
+            // Like showing full notification details
+          },
+          child: Padding(
+            padding: EdgeInsets.all(8.w),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: ResponsiveText(
-                        title,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[700],
-                        maxLines: 2,
+                // Very Compact Icon Container
+                Container(
+                  width: 28.w,
+                  height: 28.w,
+                  decoration: BoxDecoration(
+                    color: _getNotificationColor(notification).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6.r),
+                    border: Border.all(
+                      color:
+                          _getNotificationColor(notification).withOpacity(0.2),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Center(
+                    child: ResponsiveText(
+                      icon,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ),
+
+                SizedBox(width: 8.w),
+
+                // Content Section
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title and Type Badge Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ResponsiveText(
+                              title,
+                              fontSize: ResponsiveUtils.fontSizeS,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 4.w,
+                              vertical: 1.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4.r),
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.3),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: ResponsiveText(
+                              type.toUpperCase().replaceAll('_', ' '),
+                              color: Colors.grey[700],
+                              fontSize: 7.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 2.h),
+
+                      // Message
+                      ResponsiveText(
+                        message,
+                        fontSize: ResponsiveUtils.fontSizeXS,
+                        color: Colors.grey[600],
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 6.w, vertical: 3.h),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(6.r),
+
+                      SizedBox(height: 4.h),
+
+                      // Bottom Row with Time and Archived Badge
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 4.w,
+                              vertical: 1.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Ec_PRIMARY.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4.r),
+                              border: Border.all(
+                                color: Ec_PRIMARY.withOpacity(0.3),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  color: Ec_PRIMARY,
+                                  size: 8.sp,
+                                ),
+                                SizedBox(width: 2.w),
+                                ResponsiveText(
+                                  timeAgo,
+                                  fontSize: 8.sp,
+                                  color: Ec_PRIMARY,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 4.w,
+                              vertical: 1.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4.r),
+                              border: Border.all(
+                                color: Colors.orange.withOpacity(0.3),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.archive,
+                                  color: Colors.orange[600],
+                                  size: 8.sp,
+                                ),
+                                SizedBox(width: 2.w),
+                                ResponsiveText(
+                                  'ARCHIVED',
+                                  color: Colors.orange[600],
+                                  fontSize: 7.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      child: ResponsiveText(
-                        'ARCHIVED',
-                        color: Colors.grey[600],
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: ResponsiveUtils.spacingS),
-                ResponsiveText(
-                  message,
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: ResponsiveUtils.spacingM),
-                ResponsiveText(
-                  timeAgo,
-                  fontSize: 11,
-                  color: Colors.grey[500],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  Color _getNotificationColor(NotificationModel notification) {
+    switch (notification.getColor()) {
+      case 'blue':
+        return Colors.blue;
+      case 'red':
+        return Colors.red;
+      case 'green':
+        return Colors.green;
+      case 'purple':
+        return Colors.purple;
+      case 'orange':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _buildEmptyState() {

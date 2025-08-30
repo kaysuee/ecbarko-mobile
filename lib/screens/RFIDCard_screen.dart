@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../screens/buyload_screen.dart';
+import '../utils/date_format.dart';
 
 import '../models/transaction_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -188,25 +189,54 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
     final userId = prefs.getString('userID');
 
     if (token != null && userId != null) {
-      final response = await http.get(
-        Uri.parse('${getBaseUrl()}/api/cardHistory/$userId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
+      try {
+        // Fetch card history (purchases/loads)
+        final cardHistoryResponse = await http.get(
+          Uri.parse('${getBaseUrl()}/api/cardHistory/$userId'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body);
-        setState(() {
-          transactions = jsonList
-              .map((json) => Transaction.fromJson(json))
-              .toList()
-              .reversed
+        // Fetch active bookings (card usage/payments)
+        final bookingsResponse = await http.get(
+          Uri.parse('${getBaseUrl()}/api/actbooking/$userId'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
+
+        List<Transaction> allTransactions = [];
+
+        // Process card history (purchases)
+        if (cardHistoryResponse.statusCode == 200) {
+          final List<dynamic> cardHistoryList =
+              jsonDecode(cardHistoryResponse.body);
+          final cardTransactions = cardHistoryList
+              .map((json) => Transaction.fromJson(json as Map<String, dynamic>))
               .toList();
+          allTransactions.addAll(cardTransactions);
+        }
+
+        // Process active bookings (card usage)
+        if (bookingsResponse.statusCode == 200) {
+          final List<dynamic> bookingsList = jsonDecode(bookingsResponse.body);
+          final bookingTransactions = bookingsList
+              .map((json) => _createTransactionFromBooking(json))
+              .toList();
+          allTransactions.addAll(bookingTransactions);
+        }
+
+        // Sort all transactions by date (newest first)
+        allTransactions.sort((a, b) => b.date.compareTo(a.date));
+
+        setState(() {
+          transactions = allTransactions;
         });
-      } else {
-        print('Failed to load card history: ${response.statusCode}');
+      } catch (e) {
+        print('Error loading transaction history: $e');
       }
     }
   }
@@ -214,6 +244,65 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
   Future<void> refreshCard() async {
     await _loadCard();
     await _loadCardHistory();
+  }
+
+  // Helper method to create Transaction from booking data
+  Transaction _createTransactionFromBooking(Map<String, dynamic> booking) {
+    // For "Use" transactions, we want to show when the payment was actually made
+    // The API should provide the actual booking creation timestamp
+    DateTime actualTransactionDate;
+
+    // Debug: Print available fields to see what we can use
+    print('Debug: Available booking fields: ${booking.keys.toList()}');
+
+    // Try to find the actual transaction timestamp
+    if (booking['createdAt'] != null) {
+      try {
+        actualTransactionDate = DateTime.parse(booking['createdAt']);
+        print('Debug: Using createdAt: ${actualTransactionDate}');
+      } catch (e) {
+        print('Error parsing createdAt: $e');
+        actualTransactionDate = DateTime.now();
+      }
+    } else if (booking['timestamp'] != null) {
+      try {
+        actualTransactionDate = DateTime.parse(booking['timestamp']);
+        print('Debug: Using timestamp: ${actualTransactionDate}');
+      } catch (e) {
+        print('Error parsing timestamp: $e');
+        actualTransactionDate = DateTime.now();
+      }
+    } else if (booking['dateTransaction'] != null) {
+      // If no creation timestamp, use the dateTransaction but this might be departure date
+      // We need to check if this is actually a creation timestamp
+      try {
+        actualTransactionDate = DateTime.parse(booking['dateTransaction']);
+        print('Debug: Using dateTransaction: ${actualTransactionDate}');
+        // Check if this looks like a departure date (future date) vs creation date (past date)
+        if (actualTransactionDate.isAfter(DateTime.now())) {
+          print(
+              'Debug: dateTransaction appears to be a future departure date, using current time');
+          actualTransactionDate = DateTime.now();
+        }
+      } catch (e) {
+        print('Error parsing dateTransaction: $e');
+        actualTransactionDate = DateTime.now();
+      }
+    } else {
+      print('Debug: No timestamp field found, using current time');
+      actualTransactionDate = DateTime.now();
+    }
+
+    // Convert to Philippine timezone (UTC+8)
+    actualTransactionDate =
+        actualTransactionDate.toUtc().add(const Duration(hours: 8));
+
+    return Transaction(
+      date: actualTransactionDate,
+      type: 'Use', // Card usage
+      amount: (booking['totalAmount'] ?? 0).toDouble(),
+      status: booking['paymentStatus'] ?? 'Confirmed',
+    );
   }
 
   Widget _buildCardFront() {
@@ -226,7 +315,7 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
       ),
       elevation: 6,
       child: Container(
-        height: screenHeight * 0.25, // Responsive height: 25% of screen height
+        height: screenHeight * 0.28, // Responsive height: 25% of screen height
         padding: EdgeInsets.all(
             screenWidth * 0.04), // Responsive padding: 4% of screen width
         decoration: BoxDecoration(
@@ -313,7 +402,7 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
       ),
       elevation: 6,
       child: Container(
-        height: screenHeight * 0.25, // Responsive height: 25% of screen height
+        height: screenHeight * 0.28, // Responsive height: 25% of screen height
         padding: EdgeInsets.all(
             screenWidth * 0.04), // Responsive padding: 4% of screen width
         decoration: BoxDecoration(
@@ -357,7 +446,7 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                 ],
               ),
             ),
-            SizedBox(height: screenHeight * 0.015), // Responsive spacing
+            SizedBox(height: screenHeight * 0.010), // Responsive spacing
 
             // Terms and conditions text
             Expanded(
@@ -369,13 +458,13 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: screenWidth *
-                      0.032, // Responsive font size: 3.2% of screen width
+                      0.025, // Responsive font size: 3.2% of screen width
                 ),
                 textAlign: TextAlign.justify,
               ),
             ),
 
-            SizedBox(height: screenHeight * 0.015), // Responsive spacing
+            SizedBox(height: screenHeight * 0.010), // Responsive spacing
 
             // Logos and contact info
             Row(
@@ -484,38 +573,9 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('History',
-                            style: TextStyle(
-                                fontSize: 24.sp, fontWeight: FontWeight.bold)),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            border: Border.all(color: Ec_DARK_PRIMARY),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedFilterType,
-                              items: ['All', 'Load', 'Use'].map((value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value,
-                                      style: TextStyle(fontSize: 14.sp)),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedFilterType = value!;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    Text('History',
+                        style: TextStyle(
+                            fontSize: 24.sp, fontWeight: FontWeight.bold)),
                     SizedBox(
                         height: 20.h), // Increased spacing below history title
                     ListView.builder(
@@ -539,98 +599,217 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
   }
 
   Widget _buildTransactionItem(Transaction transaction) {
-    final isLoad = transaction.type == 'load';
-    final title =
-        isLoad ? 'Purchased EcBarko RFID Load' : 'Payment for EcBarko RFID';
-    final amount = '₱${transaction.amount.toStringAsFixed(2)}';
-    final status = transaction.amount > 5000
-        ? 'canceled'
-        : transaction.amount >= 100
-            ? 'confirmed'
-            : 'pending';
+    final isLoad = transaction.type.toLowerCase() == 'load';
+    final isUse = transaction.type.toLowerCase() == 'use';
+
+    String title;
+    if (isLoad) {
+      title = 'Purchased EcBarko RFID Load';
+    } else if (isUse) {
+      title = 'Payment for EcBarko RFID';
+    } else {
+      title = 'EcBarko RFID Transaction';
+    }
+
+    final amount = '₱${transaction.amount.toStringAsFixed(2)}'.replaceAllMapped(
+        RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]},');
+
+    final status = transaction.status;
 
     final statusColor = {
-      'confirmed': Colors.green,
-      'pending': Colors.orange,
-      'canceled': Colors.red,
-    }[status]!;
+          'Confirmed': Colors.green,
+          'confirmed': Colors.green,
+          'Pending': Colors.orange,
+          'pending': Colors.orange,
+          'Canceled': Colors.red,
+          'canceled': Colors.red,
+        }[status] ??
+        Colors.grey;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.h),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40.w,
-            height: 40.w,
-            decoration: BoxDecoration(
-              color: Colors.blue[100],
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Icon(Icons.credit_card, size: 20.sp, color: Colors.blue),
+    // Get appropriate icon and color based on transaction type
+    IconData transactionIcon;
+    Color iconColor;
+    Color iconBgColor;
+
+    if (isLoad) {
+      transactionIcon = Icons.add_circle;
+      iconColor = Colors.green;
+      iconBgColor = Colors.green[50]!;
+    } else if (isUse) {
+      transactionIcon = Icons.payment;
+      iconColor = Colors.blue;
+      iconBgColor = Colors.blue[50]!;
+    } else {
+      transactionIcon = Icons.credit_card;
+      iconColor = Colors.grey;
+      iconBgColor = Colors.grey[50]!;
+    }
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
           ),
-          SizedBox(width: 12.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon container with improved design
+            Container(
+              width: 48.w,
+              height: 48.w,
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(
+                  color: iconColor.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                transactionIcon,
+                size: 24.sp,
+                color: iconColor,
+              ),
+            ),
+
+            SizedBox(width: 12.w),
+
+            // Main content with improved typography
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
                     style: TextStyle(
-                        fontSize: 14.sp, fontWeight: FontWeight.w600)),
-                SizedBox(height: 4.h),
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[800],
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 6.h),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 12.sp,
+                        color: Colors.grey[500],
+                      ),
+                      SizedBox(width: 4.w),
+                      Flexible(
+                        child: Text(
+                          DateFormatUtil.formatTransactionDate(
+                              transaction.date.toString()),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Text(
+                        DateFormatUtil.formatTimeFromDateTime(transaction.date),
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: Colors.grey[500],
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Amount and status with improved layout
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
                 Text(
-                  DateFormat('dd MMM yyyy\nhh:mm a').format(transaction.date),
-                  style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                  amount,
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.grey[900],
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                SizedBox(height: 6.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(
+                      color: statusColor.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 5.w,
+                        height: 5.w,
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        status,
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: statusColor,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(amount,
-                  style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black)),
-              SizedBox(height: 4.h),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: statusColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCardActionRow(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-      padding: EdgeInsets.all(16.w),
+      margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: Ec_PRIMARY.withOpacity(0.15)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Ec_PRIMARY.withOpacity(0.08),
+            Ec_PRIMARY.withOpacity(0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: Ec_PRIMARY.withOpacity(0.15),
+          width: 1.5,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -661,22 +840,57 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        width: 80.w,
+        padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: Ec_PRIMARY.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Ec_PRIMARY, size: 22.sp),
-            SizedBox(height: 4.h),
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Ec_PRIMARY,
+                    Ec_PRIMARY.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Ec_PRIMARY.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20.sp,
+              ),
+            ),
+            SizedBox(height: 8.h),
             Text(
               label,
               style: TextStyle(
                 color: Ec_PRIMARY,
                 fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
               ),
             ),
           ],

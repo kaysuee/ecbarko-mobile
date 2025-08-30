@@ -4,18 +4,22 @@ import 'package:EcBarko/screens/buyload_screen.dart';
 import 'package:EcBarko/screens/linked_card_screen.dart';
 import 'package:EcBarko/screens/notification_screen.dart';
 import 'package:EcBarko/screens/history_screen.dart';
-import 'package:EcBarko/screens/otp_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../constants.dart';
 import '../utils/responsive_utils.dart';
+import '../utils/date_format.dart';
 import 'rates_screen.dart';
 import 'booking_screen.dart';
 import '../controllers/dashboard_data.dart';
 import '../widgets/bounce_tap_wrapper.dart';
 import '../models/booking_model.dart';
 import '../models/schedule_model.dart';
+import '../models/announcement_model.dart';
+import '../services/announcement_service.dart';
+import '../services/notification_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -44,9 +48,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   Map<String, dynamic>? cardData;
   List<BookingModel> activeBookings = [];
   List<Schedule> availableSchedules = [];
+  List<AnnouncementModel> announcements = [];
   bool isLoadingBookings = false;
   bool isLoadingSchedules = false;
+  bool isLoadingAnnouncements = false;
   bool debugShowAllSchedules = false; // Set to false to enable date filtering
+  int unreadNotificationCount = 0;
 
   @override
   void initState() {
@@ -56,6 +63,8 @@ class _DashboardScreenState extends State<DashboardScreen>
     _loadCard();
     _loadActiveBookings();
     _loadAvailableSchedules();
+    _loadAnnouncements();
+    _loadUnreadNotificationCount();
   }
 
   @override
@@ -91,7 +100,88 @@ class _DashboardScreenState extends State<DashboardScreen>
       _loadAvailableSchedules(),
       _loadUserData(),
       _loadCard(),
+      _loadAnnouncements(),
+      _loadUnreadNotificationCount(),
     ]);
+  }
+
+  // Load unread notification count
+  Future<void> _loadUnreadNotificationCount() async {
+    try {
+      if (userData != null && userData!['_id'] != null) {
+        final count = await NotificationService.getUnreadNotificationCount(
+          userId: userData!['_id'],
+        );
+        setState(() {
+          unreadNotificationCount = count;
+        });
+      }
+    } catch (e) {
+      print('Error loading unread notification count: $e');
+    }
+  }
+
+  // Load announcements from database
+  Future<void> _loadAnnouncements() async {
+    try {
+      setState(() {
+        isLoadingAnnouncements = true;
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      final currentUserId =
+          prefs.getString('userId') ?? prefs.getString('userID');
+
+      if (currentUserId != null) {
+        print('🔍 Dashboard: Loading announcements for user: $currentUserId');
+
+        final announcementsData =
+            await AnnouncementService.getUserAnnouncements(
+          userId: currentUserId,
+        );
+
+        print('📊 Dashboard: Raw announcements data: $announcementsData');
+        print('📊 Dashboard: Announcements count: ${announcementsData.length}');
+
+        final List<AnnouncementModel> loadedAnnouncements = announcementsData
+            .map((json) => AnnouncementModel.fromJson(json))
+            .toList();
+
+        print(
+            '✅ Dashboard: Parsed announcements: ${loadedAnnouncements.length}');
+
+        // Sort by priority and creation date (highest priority first, then newest)
+        loadedAnnouncements.sort((a, b) {
+          final priorityOrder = {
+            'critical': 4,
+            'high': 3,
+            'medium': 2,
+            'low': 1
+          };
+          final aPriority = priorityOrder[a.priority] ?? 0;
+          final bPriority = priorityOrder[b.priority] ?? 0;
+
+          if (aPriority != bPriority) {
+            return bPriority.compareTo(aPriority);
+          }
+          return b.dateCreated.compareTo(a.dateCreated);
+        });
+
+        setState(() {
+          announcements = loadedAnnouncements;
+          isLoadingAnnouncements = false;
+        });
+      } else {
+        setState(() {
+          isLoadingAnnouncements = false;
+        });
+      }
+    } catch (e) {
+      print('❌ Dashboard: Error loading announcements: $e');
+      setState(() {
+        isLoadingAnnouncements = false;
+      });
+    }
   }
 
   // Method to handle navigation back to dashboard
@@ -239,12 +329,12 @@ class _DashboardScreenState extends State<DashboardScreen>
         if (response.statusCode == 200) {
           final List<dynamic> jsonList = jsonDecode(response.body);
           final List<Schedule> allSchedules = [];
-          final now = DateTime.now();
+          final now = DateFormatUtil.getCurrentTime();
 
           print('🔍 DEBUG: Total schedules from API: ${jsonList.length}');
           print('🔍 DEBUG: Current time: $now');
           print(
-              '🔍 DEBUG: Current time (formatted): ${DateFormat('yyyy-MM-dd HH:mm').format(now)}');
+              '🔍 DEBUG: Current time (formatted): ${DateFormatUtil.formatDebugDate(now)}');
           print('🔍 DEBUG: Raw API response (first 3):');
           for (int i = 0; i < jsonList.length && i < 3; i++) {
             print('🔍 DEBUG: Raw [$i]: ${jsonList[i]}');
@@ -277,8 +367,14 @@ class _DashboardScreenState extends State<DashboardScreen>
 
             // Filter out past schedules
             try {
-              // Parse the departure date and time
-              final scheduleDate = DateTime.parse(schedule.departDate);
+              // Parse the departure date and time using DateFormatUtil
+              final scheduleDate =
+                  DateFormatUtil.safeParseDate(schedule.departDate);
+              if (scheduleDate == null) {
+                print('Could not parse schedule date: ${schedule.departDate}');
+                continue;
+              }
+
               final scheduleTime = schedule.departTime;
 
               print('🔍 DEBUG: - Raw departDate: "${schedule.departDate}"');
@@ -333,8 +429,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           // Sort by departure date and time (earliest first)
           allSchedules.sort((a, b) {
             try {
-              final aDate = DateTime.parse(a.departDate);
-              final bDate = DateTime.parse(b.departDate);
+              final aDate = DateFormatUtil.safeParseDate(a.departDate);
+              final bDate = DateFormatUtil.safeParseDate(b.departDate);
+              if (aDate == null || bDate == null) return 0;
 
               // First compare by date
               final dateComparison = aDate.compareTo(bDate);
@@ -457,13 +554,15 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // Get the most recent completed booking (including past dates)
   BookingModel? get _mostRecentCompletedBooking {
-    final now = DateTime.now();
+    final now = DateFormatUtil.getCurrentTime();
     final completedBookings = activeBookings.where((b) {
       // Check if booking is marked as completed OR if departure date has passed
       if (b.status == BookingStatus.completed) return true;
 
       try {
-        final departDate = DateTime.parse(b.departDate);
+        final departDate = DateFormatUtil.safeParseDate(b.departDate);
+        if (departDate == null) return false;
+
         final departTime = _parseTime(b.departTime);
         final departureDateTime = DateTime(
           departDate.year,
@@ -490,13 +589,15 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // Get the most recent active (non-completed) booking
   BookingModel? get _mostRecentNonCompletedBooking {
-    final now = DateTime.now();
+    final now = DateFormatUtil.getCurrentTime();
     final nonCompletedBookings = activeBookings.where((b) {
       // Check if booking is NOT marked as completed AND departure date has NOT passed
       if (b.status == BookingStatus.completed) return false;
 
       try {
-        final departDate = DateTime.parse(b.departDate);
+        final departDate = DateFormatUtil.safeParseDate(b.departDate);
+        if (departDate == null) return false;
+
         final departTime = _parseTime(b.departTime);
         final departureDateTime = DateTime(
           departDate.year,
@@ -524,7 +625,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   // Format date for display
   String _formatDateForDisplay(String dateString) {
     try {
-      final date = DateTime.parse(dateString);
+      final date = DateFormatUtil.safeParseDate(dateString);
+      if (date == null) return dateString;
+
       final months = [
         'Jan',
         'Feb',
@@ -741,13 +844,38 @@ class _DashboardScreenState extends State<DashboardScreen>
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const NotificationScreen()),
-            ),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.notifications_none,
+                  size: 28,
+                ),
+                iconSize: 28,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const NotificationScreen()),
+                ),
+              ),
+              if (unreadNotificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -767,28 +895,28 @@ class _DashboardScreenState extends State<DashboardScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildRFIDImage(context),
-              SizedBox(height: 3.h),
+              SizedBox(height: 10.h),
 
               _buildCardActionRow(context),
-              SizedBox(height: 3.h),
+              SizedBox(height: 10.h),
 
               _buildAnnouncementSection(context),
-              SizedBox(height: 3.h),
+              SizedBox(height: 10.h),
 
               // Show active booking if exists
               if (_mostRecentNonCompletedBooking != null) ...[
                 _buildActiveBookingCard(context),
-                SizedBox(height: 20.h), // More space below active booking
+                SizedBox(height: 10.h), // More space below active booking
               ] else if (isLoadingBookings) ...[
                 _buildLoadingBookingCard(context),
-                SizedBox(height: 20.h), // More space below loading card
+                SizedBox(height: 10.h), // More space below loading card
               ] else if (activeBookings.isEmpty) ...[
                 _buildNoBookingsCard(context),
-                SizedBox(height: 20.h), // More space below no bookings card
+                SizedBox(height: 10.h), // More space below no bookings card
               ],
 
               _buildBookSection(context),
-              SizedBox(height: 3.h),
+              SizedBox(height: 10.h),
               SizedBox(height: 10.h),
               _buildRateCards(context),
             ],
@@ -916,7 +1044,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         child: Container(
           width: double.infinity,
           height: cardHeight,
-          padding: EdgeInsets.all(screenWidth * 0.045), // 4.5% padding
+          padding:
+              EdgeInsets.all(screenWidth * 0.06), // 6% padding for all sides
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(screenWidth * 0.04),
             gradient: const RadialGradient(
@@ -937,31 +1066,32 @@ class _DashboardScreenState extends State<DashboardScreen>
                 children: [
                   Image.asset(
                     'assets/images/ecbarkowhitelogo.png',
-                    width: screenWidth * 0.11, // reduced from 0.13 to 0.11
-                    height: screenWidth * 0.11,
+                    width: screenWidth * 0.15, // reduced from 0.13 to 0.11
+                    height: screenWidth * 0.15,
                   ),
                   Text(
                     'RFID CARD',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize:
-                          screenWidth * 0.055, // reduced from 0.065 to 0.055
+                          screenWidth * 0.070, // reduced from 0.065 to 0.055
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: screenHeight * 0.04), // 4% spacing
+              SizedBox(
+                  height: screenHeight *
+                      0.04), // 4% spacing - reduced to balance padding
               Row(
                 children: [
                   Text(
                     'Available Balance',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
-                      fontSize:
-                          screenWidth * 0.035, // reduced from 0.040 to 0.035
-                      fontWeight: FontWeight.w500,
+                      fontSize: screenWidth * 0.04,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   SizedBox(width: screenWidth * 0.02),
@@ -976,12 +1106,12 @@ class _DashboardScreenState extends State<DashboardScreen>
                           ? Icons.visibility
                           : Icons.visibility_off,
                       color: Colors.white.withOpacity(0.8),
-                      size: screenWidth * 0.055, // reduced from 0.065 to 0.055
+                      size: screenWidth * 0.045,
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: screenHeight * 0.005),
+              SizedBox(height: screenHeight * 0.01),
               Flexible(
                 child: Text(
                   isBalanceVisible
@@ -989,8 +1119,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                       : '••••••',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: screenWidth * 0.055, // reduced from 0.08 to 0.055
-                    fontWeight: FontWeight.bold,
+                    fontSize: screenWidth * 0.08,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -1005,19 +1136,22 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildCardActionRow(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
-      padding: EdgeInsets.all(16.w),
+      margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: Ec_PRIMARY.withOpacity(0.15)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Ec_PRIMARY.withOpacity(0.08),
+            Ec_PRIMARY.withOpacity(0.03),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: Ec_PRIMARY.withOpacity(0.15),
+          width: 1.5,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1054,25 +1188,60 @@ class _DashboardScreenState extends State<DashboardScreen>
     required String label,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return BounceTapWrapper(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+        width: 80.w,
+        padding: EdgeInsets.symmetric(vertical: 12.h),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
+          boxShadow: [
+            BoxShadow(
+              color: Ec_PRIMARY.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: Ec_PRIMARY, size: 22.sp),
-            SizedBox(height: 4.h),
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Ec_PRIMARY,
+                    Ec_PRIMARY.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Ec_PRIMARY.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 20.sp,
+              ),
+            ),
+            SizedBox(height: 8.h),
             Text(
               label,
               style: TextStyle(
                 color: Ec_PRIMARY,
                 fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
               ),
             ),
           ],
@@ -1082,45 +1251,31 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildAnnouncementSection(BuildContext context) {
-    // Sample announcement data - in a real app, this would come from an API or service
-    final List<Map<String, String>> announcements = [
-      {
-        'title': '🌪️ Weather Advisory: Ferry Cancellations',
-        'body':
-            'Due to severe weather conditions, all ferry operations for today (May 15, 2025) have been cancelled. Please check our app for updates on rescheduled trips. Stay safe!'
-      },
-      {
-        'title': '⚠️ Scheduled Maintenance',
-        'body':
-            'EcBarko will undergo maintenance on May 12, 2025, from 12:00 AM to 4:00 AM. During this time, ticketing and tracking features will be temporarily unavailable.'
-      },
-      {
-        'title': '📱 New Feature Alert',
-        'body':
-            'Real-time ferry tracking is now live! Tap on "Track Ferry" from your dashboard to see estimated arrival and departure times.'
-      },
-      {
-        'title': '🇵🇭 Independence Day Advisory',
-        'body':
-            'In observance of Independence Day, there will be no ferry operations on June 12, 2025. Please plan your trips accordingly.'
-      },
-      {
-        'title': '🎫 Ticket Booking Reminder',
-        'body':
-            'Booking your ticket at least 24 hours before departure is highly recommended to avoid long queues and ensure a smooth boarding process.'
-      },
-    ];
+    // Use real announcements from database
+    if (isLoadingAnnouncements) {
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: Ec_PRIMARY.withOpacity(0.15)),
+        ),
+        child: Center(
+          child: CircularProgressIndicator(color: Ec_PRIMARY),
+        ),
+      );
+    }
 
-    final latestAnnouncement = announcements.first;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => AnnouncementScreen()),
-        );
-      },
-      child: Container(
+    if (announcements.isEmpty) {
+      return Container(
         margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
@@ -1159,7 +1314,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Latest Announcement',
+                        'No Announcements',
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w700,
@@ -1168,19 +1323,229 @@ class _DashboardScreenState extends State<DashboardScreen>
                       ),
                       SizedBox(height: 6.h),
                       Text(
-                        latestAnnouncement['title']!,
+                        'Check back later for updates',
                         style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[600],
                           height: 1.3,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 8.h),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: Ec_PRIMARY.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                            color: Ec_PRIMARY.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 14.sp,
+                              color: Ec_PRIMARY,
+                            ),
+                            SizedBox(width: 6.w),
+                            Text(
+                              'All clear!',
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Ec_PRIMARY,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    final latestAnnouncement =
+        _getMostUrgentAnnouncement() ?? announcements.first;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => AnnouncementScreen()),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: Ec_PRIMARY.withOpacity(0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(10.w),
+                  decoration: BoxDecoration(
+                    color: _getAnnouncementTypeColor(latestAnnouncement.type)
+                        .withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    latestAnnouncement.getIcon(),
+                    style: TextStyle(fontSize: 20.sp),
+                  ),
+                ),
+                SizedBox(width: 14.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            _getAnnouncementCountText(),
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: _hasUrgentAnnouncements()
+                                  ? Colors.red
+                                  : Ec_PRIMARY,
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color:
+                                  _getPriorityColor(latestAnnouncement.priority)
+                                      .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                color: _getPriorityColor(
+                                        latestAnnouncement.priority)
+                                    .withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  latestAnnouncement.getPriorityIcon(),
+                                  style: TextStyle(fontSize: 12.sp),
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  latestAnnouncement.priority.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getPriorityColor(
+                                        latestAnnouncement.priority),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (announcements.length > 1) ...[
+                            SizedBox(width: 8.w),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 6.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: Ec_PRIMARY.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: Border.all(
+                                  color: Ec_PRIMARY.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.campaign_outlined,
+                                    size: 12.sp,
+                                    color: Ec_PRIMARY,
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    '${announcements.length}',
+                                    style: TextStyle(
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: Ec_PRIMARY,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      SizedBox(height: 6.h),
+                      Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 6.w, vertical: 2.h),
+                            decoration: BoxDecoration(
+                              color: _getAnnouncementTypeColor(
+                                      latestAnnouncement.type)
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6.r),
+                            ),
+                            child: Text(
+                              latestAnnouncement.type.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 9.sp,
+                                fontWeight: FontWeight.w600,
+                                color: _getAnnouncementTypeColor(
+                                    latestAnnouncement.type),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              latestAnnouncement.title,
+                              style: TextStyle(
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 8.h),
                       Text(
-                        latestAnnouncement['body']!,
+                        latestAnnouncement.message,
                         style: TextStyle(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w400,
@@ -1189,6 +1554,57 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 8.h),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 14.sp,
+                            color: Colors.grey[500],
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            latestAnnouncement.getTimeAgo(),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Spacer(),
+                          if (latestAnnouncement.isUrgent)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 6.w, vertical: 2.h),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: Border.all(
+                                  color: Colors.red.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '🚨',
+                                    style: TextStyle(fontSize: 10.sp),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  Text(
+                                    'URGENT',
+                                    style: TextStyle(
+                                      fontSize: 9.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
                       SizedBox(height: 8.h),
                       Row(
@@ -1205,6 +1621,36 @@ class _DashboardScreenState extends State<DashboardScreen>
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w500,
                               color: Ec_PRIMARY.withOpacity(0.7),
+                            ),
+                          ),
+                          Spacer(),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8.w, vertical: 4.h),
+                            decoration: BoxDecoration(
+                              color: Ec_PRIMARY.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                  color: Ec_PRIMARY.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.history,
+                                  size: 12.sp,
+                                  color: Ec_PRIMARY,
+                                ),
+                                SizedBox(width: 4.w),
+                                Text(
+                                  'View All',
+                                  style: TextStyle(
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: Ec_PRIMARY,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -1460,36 +1906,48 @@ class _DashboardScreenState extends State<DashboardScreen>
                   ],
                 ),
               ),
-            ] else ...[
-              // Active booking action button
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 12.h),
-                decoration: BoxDecoration(
-                  color: Ec_PRIMARY,
-                  borderRadius: BorderRadius.circular(8.r),
+            ],
+
+            SizedBox(height: 10.h),
+
+            // View All Active Bookings Button
+            Center(
+              child: BounceTapWrapper(
+                onTap: () => _navigateTo(
+                  context,
+                  const BookingScreen(showBackButton: true, initialTab: 0),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'View Active Booking',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
+                child: Container(
+                  margin: EdgeInsets.only(top: 6.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: Ec_PRIMARY.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(color: Ec_PRIMARY.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'View All Active Bookings',
+                        style: TextStyle(
+                          color: Ec_PRIMARY,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                      size: 16.sp,
-                    ),
-                  ],
+                      SizedBox(width: 6.w),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: Ec_PRIMARY,
+                        size: 14.sp,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -2373,5 +2831,75 @@ class _DashboardScreenState extends State<DashboardScreen>
     } catch (e) {
       print('❌ Navigation failed: $e');
     }
+  }
+
+  // Helper method to get announcement type color
+  Color _getAnnouncementTypeColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'info':
+        return Colors.blue;
+      case 'warning':
+        return Colors.orange;
+      case 'urgent':
+        return Colors.red;
+      case 'maintenance':
+        return Colors.yellow;
+      case 'general':
+        return Ec_PRIMARY;
+      default:
+        return Ec_PRIMARY;
+    }
+  }
+
+  // Helper method to get priority color
+  Color _getPriorityColor(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'low':
+        return Colors.green;
+      case 'medium':
+        return Colors.orange;
+      case 'high':
+        return Colors.red;
+      case 'critical':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Helper method to check if there are urgent announcements
+  bool _hasUrgentAnnouncements() {
+    return announcements.any((announcement) => announcement.isUrgent);
+  }
+
+  // Helper method to get the most urgent announcement
+  AnnouncementModel? _getMostUrgentAnnouncement() {
+    if (announcements.isEmpty) return null;
+
+    final urgentAnnouncements = announcements.where((a) => a.isUrgent).toList();
+    if (urgentAnnouncements.isEmpty) return announcements.first;
+
+    // Sort by priority and return the most urgent
+    urgentAnnouncements.sort((a, b) {
+      final priorityOrder = {'critical': 4, 'high': 3, 'medium': 2, 'low': 1};
+      final aPriority = priorityOrder[a.priority] ?? 0;
+      final bPriority = priorityOrder[b.priority] ?? 0;
+      return bPriority.compareTo(aPriority);
+    });
+
+    return urgentAnnouncements.first;
+  }
+
+  // Helper method to get announcement count text
+  String _getAnnouncementCountText() {
+    if (announcements.isEmpty) return 'No Announcements';
+    if (announcements.length == 1) return 'Latest Announcement';
+
+    final urgentCount = announcements.where((a) => a.isUrgent).length;
+    if (urgentCount > 0) {
+      return 'Urgent Announcement${urgentCount > 1 ? 's' : ''}';
+    }
+
+    return 'Latest Announcement';
   }
 }

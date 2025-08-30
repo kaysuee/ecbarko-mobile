@@ -5,7 +5,7 @@ import '../models/booking_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../utils/date_formatter.dart';
+import '../utils/date_format.dart';
 
 String getBaseUrl() {
   return 'https://ecbarko-db.onrender.com';
@@ -66,7 +66,7 @@ class _CompletedBookingScreenState extends State<CompletedBookingScreen> {
         }
 
         // Filter and sort completed bookings
-        final now = DateTime.now();
+        final now = DateFormatUtil.getCurrentTime();
         final completed = allBookings.where((b) {
           // Check if booking is marked as completed OR if departure date has passed
           if (b.status == BookingStatus.completed) return true;
@@ -156,7 +156,7 @@ class _CompletedBookingScreenState extends State<CompletedBookingScreen> {
     }
   }
 
-  // Using centralized DateFormatter instead of local function
+  // Using centralized DateFormatUtil instead of local function
 
   @override
   Widget build(BuildContext context) {
@@ -438,7 +438,7 @@ class _CompletedBookingScreenState extends State<CompletedBookingScreen> {
   }
 
   Widget _buildCompletedBookingCard(BookingModel booking, int tripNumber) {
-    final now = DateTime.now();
+    final now = DateFormatUtil.getCurrentTime();
     bool isPastDeparture = false;
 
     try {
@@ -504,7 +504,7 @@ class _CompletedBookingScreenState extends State<CompletedBookingScreen> {
                       ),
                     ),
                     Text(
-                      '${DateFormatter.formatDateForDisplay(booking.departDate)} at ${DateFormatter.formatScheduleTime(booking.departTime)}',
+                      '${DateFormatUtil.formatDateForDisplay(booking.departDate)} at ${DateFormatUtil.formatScheduleTime(booking.departTime)}',
                       style: TextStyle(
                         fontSize: 12.sp,
                         color: Colors.grey[600],

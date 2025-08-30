@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/announcement_service.dart';
 import '../services/about_service.dart';
 import '../models/announcement_model.dart';
+import '../utils/date_format.dart';
 
 const Color Ec_PRIMARY = Color(0xFF013986);
 
@@ -15,7 +16,6 @@ class AboutScreen extends StatefulWidget {
 
 class _AboutScreenState extends State<AboutScreen> {
   List<AnnouncementModel> announcements = [];
-  Map<String, dynamic>? appStats;
   String? aboutText;
   DateTime? lastUpdated;
   bool isLoading = true;
@@ -33,10 +33,9 @@ class _AboutScreenState extends State<AboutScreen> {
       final prefs = await SharedPreferences.getInstance();
       userId = prefs.getString('userId');
 
-      // Load announcements, stats, and about text in parallel
+      // Load announcements and about text in parallel
       final results = await Future.wait([
         AnnouncementService.getUserAnnouncements(userId: userId ?? ''),
-        AnnouncementService.getAnnouncementStats(),
         AboutService.getAboutText(),
       ]);
 
@@ -45,13 +44,12 @@ class _AboutScreenState extends State<AboutScreen> {
           announcements = (results[0] as List<Map<String, dynamic>>)
               .map((json) => AnnouncementModel.fromJson(json))
               .toList();
-          appStats = results[1] as Map<String, dynamic>?;
           aboutText =
-              (results[2] as Map<String, dynamic>?)?['aboutText'] as String?;
+              (results[1] as Map<String, dynamic>?)?['aboutText'] as String?;
           lastUpdated =
-              (results[2] as Map<String, dynamic>?)?['updatedAt'] != null
+              (results[1] as Map<String, dynamic>?)?['updatedAt'] != null
                   ? DateTime.parse(
-                      (results[2] as Map<String, dynamic>?)!['updatedAt'])
+                      (results[1] as Map<String, dynamic>?)!['updatedAt'])
                   : null;
           isLoading = false;
           hasError = false;
@@ -84,7 +82,7 @@ class _AboutScreenState extends State<AboutScreen> {
             top: topPadding + 20,
             left: 0,
             right: 0,
-            height: screenHeight * 0.35,
+            height: screenHeight * 0.5,
             child: Opacity(
               opacity: 0.8,
               child: Image.asset(
@@ -127,14 +125,14 @@ class _AboutScreenState extends State<AboutScreen> {
             ),
           ),
 
-          // Blue card with dynamic content
+          // Blue card with dynamic content (bottom half)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
               width: screenWidth,
-              height: screenHeight * 0.55,
+              height: screenHeight * 0.5,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
               decoration: const BoxDecoration(
                 color: Ec_PRIMARY,
@@ -150,7 +148,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      const SizedBox(height: 80), // for overlapping icon
+                      const SizedBox(height: 60), // for overlapping icon
 
                       // App Description
                       Text(
@@ -193,11 +191,6 @@ class _AboutScreenState extends State<AboutScreen> {
 
                       const SizedBox(height: 20),
 
-                      // App Statistics
-                      if (appStats != null) _buildAppStats(),
-
-                      const SizedBox(height: 20),
-
                       // Recent Announcements
                       if (announcements.isNotEmpty)
                         _buildAnnouncementsSection(),
@@ -219,7 +212,7 @@ class _AboutScreenState extends State<AboutScreen> {
 
           // Overlapping circular logo
           Positioned(
-            bottom: screenHeight * 0.55 - 75,
+            bottom: screenHeight * 0.5 - 75,
             left: (screenWidth / 2) - 75,
             child: Container(
               width: 150,
@@ -232,95 +225,6 @@ class _AboutScreenState extends State<AboutScreen> {
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppStats() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'App Statistics',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  'Total Announcements',
-                  '${appStats?['totalAnnouncements'] ?? 0}',
-                  Icons.announcement,
-                ),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  'Active Users',
-                  '${appStats?['activeUsers'] ?? 0}',
-                  Icons.people,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  'Today\'s Updates',
-                  '${appStats?['todayUpdates'] ?? 0}',
-                  Icons.update,
-                ),
-              ),
-              Expanded(
-                child: _buildStatItem(
-                  'System Status',
-                  appStats?['systemStatus'] ?? 'Operational',
-                  Icons.check_circle,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 12,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -646,7 +550,7 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final now = DateTime.now();
+    final now = DateFormatUtil.getCurrentTime();
     final difference = now.difference(date);
 
     if (difference.inDays > 0) {

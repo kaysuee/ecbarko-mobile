@@ -7,10 +7,11 @@ import '../models/schedule_model.dart';
 import '../models/booking_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../utils/date_format.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import '../services/notification_service.dart';
-import '../utils/date_formatter.dart';
+import '../utils/date_format.dart';
 import '../widgets/constant_dialog.dart';
 import 'completed_booking_screen.dart';
 
@@ -87,7 +88,7 @@ class _BookingScreenState extends State<BookingScreen>
         final List<dynamic> jsonList = jsonDecode(response.body);
 
         final List<Schedule> updatedSchedule = [];
-        final now = DateTime.now();
+        final now = DateFormatUtil.getCurrentTime();
 
         for (var json in jsonList) {
           final schedule = Schedule.fromJson(json as Map<String, dynamic>);
@@ -209,7 +210,7 @@ class _BookingScreenState extends State<BookingScreen>
           final List<dynamic> jsonList = jsonDecode(response.body);
           print('Active booking response body: $jsonList'); // Debug print
 
-          final now = DateTime.now();
+          final now = DateFormatUtil.getCurrentTime();
 
           // Filter and update bookings (same logic as dashboard)
           final List<BookingModel> updatedBookings = [];
@@ -353,14 +354,14 @@ class _BookingScreenState extends State<BookingScreen>
     }
   }
 
-  // Using centralized DateFormatter instead of local function
+  // Using centralized DateFormatUtil instead of local function
 
-  // Using centralized DateFormatter instead of local function
+  // Using centralized DateFormatUtil instead of local function
 
-  // Using centralized DateFormatter instead of local function
+  // Using centralized DateFormatUtil instead of local function
 
   String _getTimeAgo(DateTime createdAt) {
-    final now = DateTime.now();
+    final now = DateFormatUtil.getCurrentTime();
     final difference = now.difference(createdAt);
 
     if (difference.inDays > 0) {
@@ -374,11 +375,11 @@ class _BookingScreenState extends State<BookingScreen>
     }
   }
 
-  // Using centralized DateFormatter instead of local function
+  // Using centralized DateFormatUtil instead of local function
 
-  // Using centralized DateFormatter instead of local function
+  // Using centralized DateFormatUtil instead of local function
 
-  // Using centralized DateFormatter instead of local function
+  // Using centralized DateFormatUtil instead of local function
 
   Widget _buildActiveBookingCard(BookingModel booking) {
     // Debug logging for arrival time
@@ -578,7 +579,7 @@ class _BookingScreenState extends State<BookingScreen>
                       Expanded(
                         child: Text(
                           booking.createdAt != null
-                              ? 'Booked on ${DateFormatter.formatDateTimeFromDateTime(booking.createdAt)}'
+                              ? 'Booked on ${DateFormatUtil.formatDateTimeFromDateTime(booking.createdAt)}'
                               : 'Booked date and time',
                           style: TextStyle(
                             fontSize: 14.sp,
@@ -661,7 +662,7 @@ class _BookingScreenState extends State<BookingScreen>
                           // 📅 Departure Date & Time (from booking.departDate & booking.departTime) - Shows the actual departure date and time
                           Expanded(
                             child: Text(
-                              '${DateFormatter.formatDateAbbreviated(booking.departDate)} ${DateFormatter.formatTime(booking.departTime)}',
+                              '${DateFormatUtil.formatDateAbbreviated(booking.departDate)} ${DateFormatUtil.formatTime(booking.departTime)}',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.bold,
@@ -709,7 +710,7 @@ class _BookingScreenState extends State<BookingScreen>
                           // 📅 Arrival Date & Time (from booking.arriveDate & booking.arriveTime) - ⚠️  ISSUE: These fields may be empty because the database schema is missing them
                           Expanded(
                             child: Text(
-                              '${DateFormatter.formatDateAbbreviated(booking.arriveDate)} ${DateFormatter.formatTime(booking.arriveTime)}',
+                              '${DateFormatUtil.formatDateAbbreviated(booking.arriveDate)} ${DateFormatUtil.formatTime(booking.arriveTime)}',
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.bold,
@@ -1458,7 +1459,7 @@ class _BookingScreenState extends State<BookingScreen>
                             SizedBox(width: 8.w),
                             Expanded(
                               child: Text(
-                                'Booked on ${DateFormatter.formatDateTimeFromDateTime(booking.createdAt)}',
+                                'Booked on ${DateFormatUtil.formatDateTimeFromDateTime(booking.createdAt)}',
                                 style: TextStyle(
                                   fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
@@ -1570,7 +1571,7 @@ class _BookingScreenState extends State<BookingScreen>
                                   ),
                                   SizedBox(height: 8.h),
                                   Text(
-                                    '${DateFormatter.formatDepartDate(booking.departDate)} at ${DateFormatter.formatTime(booking.departTime)}',
+                                    '${DateFormatUtil.formatDepartDate(booking.departDate)} at ${DateFormatUtil.formatTime(booking.departTime)}',
                                     style: TextStyle(
                                       fontSize: 18.sp,
                                       fontWeight: FontWeight.w600,
@@ -1628,7 +1629,7 @@ class _BookingScreenState extends State<BookingScreen>
                                     ),
                                     SizedBox(height: 8.h),
                                     Text(
-                                      '${DateFormatter.formatDateAbbreviated(booking.arriveDate)} at ${DateFormatter.formatTime(booking.arriveTime)}',
+                                      '${DateFormatUtil.formatDateAbbreviated(booking.arriveDate)} at ${DateFormatUtil.formatTime(booking.arriveTime)}',
                                       style: TextStyle(
                                         fontSize: 18.sp,
                                         fontWeight: FontWeight.w600,
@@ -2259,7 +2260,7 @@ class _BookingScreenState extends State<BookingScreen>
                             icon: Icons.schedule,
                             title: 'Departure',
                             subtitle:
-                                '${DateFormatter.formatDepartDate(booking.departDate)} at ${DateFormatter.formatTime(booking.departTime)}',
+                                '${DateFormatUtil.formatDepartDate(booking.departDate)} at ${DateFormatUtil.formatTime(booking.departTime)}',
                             isCompleted: _isDeparturePassed(booking),
                             color: Ec_PRIMARY,
                           ),
@@ -2268,7 +2269,7 @@ class _BookingScreenState extends State<BookingScreen>
                             title: 'Arrival',
                             subtitle: booking.arriveDate.isNotEmpty &&
                                     booking.arriveTime.isNotEmpty
-                                ? '${DateFormatter.formatDateAbbreviated(booking.arriveDate)} at ${DateFormatter.formatTime(booking.arriveTime)}'
+                                ? '${DateFormatUtil.formatDateAbbreviated(booking.arriveDate)} at ${DateFormatUtil.formatTime(booking.arriveTime)}'
                                 : 'To be updated',
                             isCompleted: _isArrivalPassed(booking),
                             color: Colors.orange,
@@ -2928,7 +2929,7 @@ class _BookingScreenState extends State<BookingScreen>
         departTime.hour,
         departTime.minute,
       );
-      return departureDateTime.isBefore(DateTime.now());
+      return departureDateTime.isBefore(DateFormatUtil.getCurrentTime());
     } catch (e) {
       return false;
     }
@@ -2949,7 +2950,7 @@ class _BookingScreenState extends State<BookingScreen>
         arriveTime.hour,
         arriveTime.minute,
       );
-      return arrivalDateTime.isBefore(DateTime.now());
+      return arrivalDateTime.isBefore(DateFormatUtil.getCurrentTime());
     } catch (e) {
       return false;
     }
@@ -2959,7 +2960,7 @@ class _BookingScreenState extends State<BookingScreen>
     print('🔍 DEBUG: Date picker opened');
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: DateFormatUtil.getCurrentTime(),
       firstDate: DateTime(2024),
       lastDate: DateTime(2026),
     );
@@ -3298,7 +3299,7 @@ class _BookingScreenState extends State<BookingScreen>
                 ),
                 SizedBox(width: 8.w),
                 Text(
-                  'Filtered: ${DateFormatter.formatDateAbbreviated(selectedDate!.toString())}',
+                  'Filtered: ${DateFormatUtil.formatDateAbbreviated(selectedDate!.toString())}',
                   style: TextStyle(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
@@ -3331,7 +3332,7 @@ class _BookingScreenState extends State<BookingScreen>
 
   // Get all completed bookings
   List<BookingModel> _getCompletedBookings() {
-    final now = DateTime.now();
+    final now = DateFormatUtil.getCurrentTime();
     final completedBookings = activeBookings.where((b) {
       // Check if booking is marked as completed OR if departure date has passed
       if (b.status == BookingStatus.completed) return true;
@@ -3420,5 +3421,5 @@ class _BookingScreenState extends State<BookingScreen>
   }
 
   // Helper method to format schedule time (12-hour format)
-  // Using centralized DateFormatter instead of local function
+  // Using centralized DateFormatUtil instead of local function
 }
