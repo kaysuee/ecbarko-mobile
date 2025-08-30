@@ -150,8 +150,18 @@ class _DashboardScreenState extends State<DashboardScreen>
         print(
             '✅ Dashboard: Parsed announcements: ${loadedAnnouncements.length}');
 
+        // Filter out test announcements (same as announcement screen)
+        final filteredAnnouncements = loadedAnnouncements
+            .where((a) =>
+                !a.title.toLowerCase().contains('test') &&
+                !a.message.toLowerCase().contains('test'))
+            .toList();
+
+        print(
+            '🔍 Dashboard: After filtering test announcements: ${filteredAnnouncements.length}');
+
         // Sort by priority and creation date (highest priority first, then newest)
-        loadedAnnouncements.sort((a, b) {
+        filteredAnnouncements.sort((a, b) {
           final priorityOrder = {
             'critical': 4,
             'high': 3,
@@ -168,7 +178,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         });
 
         setState(() {
-          announcements = loadedAnnouncements;
+          announcements = filteredAnnouncements;
           isLoadingAnnouncements = false;
         });
       } else {
@@ -1154,28 +1164,36 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildCardActionButton(
-            context,
-            icon: Icons.add_circle_outline,
-            label: 'Load',
-            onTap: () {
-              print('🔄 Load button tapped!');
-              _navigateTo(context, const BuyLoadScreen());
-            },
+          Expanded(
+            child: _buildCardActionButton(
+              context,
+              icon: Icons.add_circle_outline,
+              label: 'Load',
+              onTap: () {
+                print('🔄 Load button tapped!');
+                _navigateTo(context, const BuyLoadScreen());
+              },
+            ),
           ),
-          _buildCardActionButton(
-            context,
-            icon: Icons.credit_card,
-            label: 'Link Card',
-            onTap: () => _navigateTo(context, const LinkedCardScreen()),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: _buildCardActionButton(
+              context,
+              icon: Icons.credit_card,
+              label: 'Link Card',
+              onTap: () => _navigateTo(context, const LinkedCardScreen()),
+            ),
           ),
-          _buildCardActionButton(
-            context,
-            icon: Icons.history,
-            label: 'History',
-            onTap: () => _navigateTo(context, const HistoryScreen()),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: _buildCardActionButton(
+              context,
+              icon: Icons.history,
+              label: 'History',
+              onTap: () => _navigateTo(context, const HistoryScreen()),
+            ),
           ),
         ],
       ),
@@ -1191,8 +1209,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     return BounceTapWrapper(
       onTap: onTap,
       child: Container(
-        width: 80.w,
-        padding: EdgeInsets.symmetric(vertical: 12.h),
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
@@ -1243,6 +1260,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.3,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1421,88 +1441,99 @@ class _DashboardScreenState extends State<DashboardScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            _getAnnouncementCountText(),
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w700,
-                              color: _hasUrgentAnnouncements()
-                                  ? Colors.red
-                                  : Ec_PRIMARY,
-                            ),
-                          ),
-                          SizedBox(width: 8.w),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 6.w, vertical: 2.h),
-                            decoration: BoxDecoration(
-                              color:
-                                  _getPriorityColor(latestAnnouncement.priority)
-                                      .withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8.r),
-                              border: Border.all(
-                                color: _getPriorityColor(
-                                        latestAnnouncement.priority)
-                                    .withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  latestAnnouncement.getPriorityIcon(),
-                                  style: TextStyle(fontSize: 12.sp),
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  latestAnnouncement.priority.toUpperCase(),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _getAnnouncementCountText(),
                                   style: TextStyle(
-                                    fontSize: 10.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: _getPriorityColor(
-                                        latestAnnouncement.priority),
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: _hasUrgentAnnouncements()
+                                        ? Colors.red
+                                        : Ec_PRIMARY,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (announcements.length > 1) ...[
-                            SizedBox(width: 8.w),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 6.w, vertical: 2.h),
-                              decoration: BoxDecoration(
-                                color: Ec_PRIMARY.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8.r),
-                                border: Border.all(
-                                  color: Ec_PRIMARY.withOpacity(0.3),
-                                  width: 1,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.campaign_outlined,
-                                    size: 12.sp,
-                                    color: Ec_PRIMARY,
+                            ],
+                          ),
+                          SizedBox(height: 6.h),
+                          Wrap(
+                            spacing: 6.w,
+                            runSpacing: 4.h,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 6.w, vertical: 2.h),
+                                decoration: BoxDecoration(
+                                  color: _getPriorityColor(
+                                          latestAnnouncement.priority)
+                                      .withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8.r),
+                                  border: Border.all(
+                                    color: _getPriorityColor(
+                                            latestAnnouncement.priority)
+                                        .withOpacity(0.3),
+                                    width: 1,
                                   ),
-                                  SizedBox(width: 6.w),
-                                  Text(
-                                    '${announcements.length}',
-                                    style: TextStyle(
-                                      fontSize: 10.sp,
-                                      fontWeight: FontWeight.w600,
-                                      color: Ec_PRIMARY,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      latestAnnouncement.getPriorityIcon(),
+                                      style: TextStyle(fontSize: 12.sp),
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    Text(
+                                      latestAnnouncement.priority.toUpperCase(),
+                                      style: TextStyle(
+                                        fontSize: 10.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: _getPriorityColor(
+                                            latestAnnouncement.priority),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (announcements.length > 1)
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 6.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                    color: Ec_PRIMARY.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(
+                                      color: Ec_PRIMARY.withOpacity(0.3),
+                                      width: 1,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          ],
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.campaign_outlined,
+                                        size: 12.sp,
+                                        color: Ec_PRIMARY,
+                                      ),
+                                      SizedBox(width: 6.w),
+                                      Text(
+                                        '${announcements.length}',
+                                        style: TextStyle(
+                                          fontSize: 10.sp,
+                                          fontWeight: FontWeight.w600,
+                                          color: Ec_PRIMARY,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
                         ],
                       ),
                       SizedBox(height: 6.h),
@@ -1556,8 +1587,24 @@ class _DashboardScreenState extends State<DashboardScreen>
                         overflow: TextOverflow.ellipsis,
                       ),
                       SizedBox(height: 8.h),
+                      // Date and Time Information
                       Row(
                         children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14.sp,
+                            color: Colors.grey[500],
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            _formatDate(latestAnnouncement.dateCreated),
+                            style: TextStyle(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
                           Icon(
                             Icons.access_time,
                             size: 14.sp,
@@ -1565,7 +1612,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                           ),
                           SizedBox(width: 4.w),
                           Text(
-                            latestAnnouncement.getTimeAgo(),
+                            _formatTime(latestAnnouncement.dateCreated),
                             style: TextStyle(
                               fontSize: 11.sp,
                               fontWeight: FontWeight.w500,
@@ -1606,6 +1653,27 @@ class _DashboardScreenState extends State<DashboardScreen>
                             ),
                         ],
                       ),
+                      SizedBox(height: 4.h),
+                      // Relative Time (e.g., "1 day ago")
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 12.sp,
+                            color: Colors.grey[400],
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            'Posted ${latestAnnouncement.getTimeAgo()}',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.grey[500],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
                       SizedBox(height: 8.h),
                       Row(
                         children: [
@@ -1624,35 +1692,16 @@ class _DashboardScreenState extends State<DashboardScreen>
                             ),
                           ),
                           Spacer(),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8.w, vertical: 4.h),
-                            decoration: BoxDecoration(
-                              color: Ec_PRIMARY.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                  color: Ec_PRIMARY.withOpacity(0.3)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.history,
-                                  size: 12.sp,
-                                  color: Ec_PRIMARY,
-                                ),
-                                SizedBox(width: 4.w),
-                                Text(
-                                  'View All',
-                                  style: TextStyle(
-                                    fontSize: 10.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: Ec_PRIMARY,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          // Container(
+                          //   padding: EdgeInsets.symmetric(
+                          //       horizontal: 8.w, vertical: 4.h),
+                          //   decoration: BoxDecoration(
+                          //     color: Ec_PRIMARY.withOpacity(0.1),
+                          //     borderRadius: BorderRadius.circular(12.r),
+                          //     border: Border.all(
+                          //         color: Ec_PRIMARY.withOpacity(0.3)),
+                          //   ),
+                          // ),
                         ],
                       ),
                     ],
@@ -2901,5 +2950,34 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
 
     return 'Latest Announcement';
+  }
+
+  // Helper method to format date
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  // Helper method to format time
+  String _formatTime(DateTime date) {
+    final hour = date.hour;
+    final minute = date.minute;
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    final displayMinute = minute.toString().padLeft(2, '0');
+    return '$displayHour:$displayMinute $period';
   }
 }
