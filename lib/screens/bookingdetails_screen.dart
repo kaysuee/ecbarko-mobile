@@ -2103,9 +2103,18 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
 
                 for (var i = 0; i < passengers.length; i++) {
                   final passenger = passengers[i];
-                  if (passenger["firstName"]!.text.trim().isEmpty ||
-                      passenger["lastName"]!.text.trim().isEmpty ||
-                      passenger["contact"]!.text.trim().isEmpty) {
+                  final firstName = passenger["firstName"]!.text.trim();
+                  final lastName = passenger["lastName"]!.text.trim();
+                  final contact = passenger["contact"]!.text.trim();
+
+                  // Debug: Print validation data
+                  print(
+                      'DEBUG: Validating Passenger ${i + 1} - First: "$firstName", Last: "$lastName", Contact: "$contact"');
+
+                  if (firstName.isEmpty ||
+                      lastName.isEmpty ||
+                      contact.isEmpty) {
+                    print('DEBUG: Validation failed for Passenger ${i + 1}');
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
