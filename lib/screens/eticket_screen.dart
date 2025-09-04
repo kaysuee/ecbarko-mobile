@@ -382,6 +382,8 @@ class ETicketScreen extends StatelessWidget {
           ...passengers.asMap().entries.map((entry) {
             final index = entry.key;
             final passenger = entry.value;
+            // Debug: Print passenger data
+            print('DEBUG ETicket: Passenger ${index + 1} = $passenger');
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

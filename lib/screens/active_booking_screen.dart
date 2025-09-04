@@ -508,6 +508,10 @@ class _ActiveBookingScreenState extends State<ActiveBookingScreen>
     // Debug: Print booking data to see what we're working with
     print('DEBUG: Booking hasVehicle = ${booking.hasVehicle}');
     print('DEBUG: Booking vehicleInfo = ${booking.vehicleInfo}');
+    print('DEBUG: Passenger Details:');
+    for (var passenger in booking.passengerDetails) {
+      print('  - Name: ${passenger.name}, Contact: ${passenger.contactNumber}');
+    }
     if (booking.hasVehicle && booking.vehicleInfo != null) {
       print('DEBUG: Vehicle owner = ${booking.vehicleInfo!.owner}');
       print('DEBUG: Vehicle customType = ${booking.vehicleInfo!.customType}');
