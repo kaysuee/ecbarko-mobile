@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../screens/buyload_screen.dart';
+import '../screens/history_screen.dart';
 import '../utils/date_format.dart';
+import '../widgets/card_action_row.dart';
 
 import '../models/transaction_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -564,7 +566,12 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
               ),
               SizedBox(
                   height: 10.h), // Reduced spacing between card and actions
-              _buildCardActionRow(context),
+              CardActionRow(
+                onLoadTap: () => _navigateTo(context, const BuyLoadScreen()),
+                onLinkCardTap: () =>
+                    _navigateTo(context, const LinkedCardScreen()),
+                onHistoryTap: () => _navigateTo(context, const HistoryScreen()),
+              ),
               SizedBox(
                   height:
                       10.h), // Increased spacing between actions and history
@@ -581,12 +588,57 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: filteredTransactions.length,
+                      itemCount: filteredTransactions.length > 3
+                          ? 3
+                          : filteredTransactions.length,
                       itemBuilder: (context, index) {
                         final transaction = filteredTransactions[index];
                         return _buildTransactionItem(transaction);
                       },
                     ),
+                    if (filteredTransactions.length > 3) ...[
+                      SizedBox(height: 16.h),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () =>
+                              _navigateTo(context, const HistoryScreen()),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 24.w, vertical: 12.h),
+                            decoration: BoxDecoration(
+                              color: Ec_PRIMARY.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20.r),
+                              border: Border.all(
+                                color: Ec_PRIMARY.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    'View All ${filteredTransactions.length}',
+                                    style: TextStyle(
+                                      color: Ec_PRIMARY,
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                SizedBox(width: 6.w),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: Ec_PRIMARY,
+                                  size: 12.sp,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -710,24 +762,15 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                         color: Colors.grey[500],
                       ),
                       SizedBox(width: 4.w),
-                      Flexible(
+                      Expanded(
                         child: Text(
-                          DateFormatUtil.formatTransactionDate(
-                              transaction.date.toString()),
+                          '${DateFormatUtil.formatTransactionDate(transaction.date.toString())} ${DateFormatUtil.formatTimeFromDateTime(transaction.date)}',
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w500,
                           ),
-                        ),
-                      ),
-                      SizedBox(width: 8.w),
-                      Text(
-                        DateFormatUtil.formatTimeFromDateTime(transaction.date),
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w400,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -785,113 +828,6 @@ class _RFIDCardScreenState extends State<RFIDCardScreen> {
                   ),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardActionRow(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Ec_PRIMARY.withOpacity(0.08),
-            Ec_PRIMARY.withOpacity(0.03),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(
-          color: Ec_PRIMARY.withOpacity(0.15),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildCardActionButton(
-            context,
-            icon: Icons.add_circle_outline,
-            label: 'Load',
-            onTap: () => _navigateTo(context, const BuyLoadScreen()),
-          ),
-          _buildCardActionButton(
-            context,
-            icon: Icons.credit_card,
-            label: 'Link Card',
-            onTap: () => _navigateTo(context, const LinkedCardScreen()),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 80.w,
-        padding: EdgeInsets.symmetric(vertical: 12.h),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12.r),
-          boxShadow: [
-            BoxShadow(
-              color: Ec_PRIMARY.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Ec_PRIMARY,
-                    Ec_PRIMARY.withOpacity(0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Ec_PRIMARY.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 20.sp,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              label,
-              style: TextStyle(
-                color: Ec_PRIMARY,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
-              ),
             ),
           ],
         ),

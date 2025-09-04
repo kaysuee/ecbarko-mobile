@@ -3,6 +3,7 @@ import 'package:EcBarko/screens/payment_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
+import '../models/booking_model.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/date_format.dart';
@@ -2270,7 +2271,6 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => PaymentScreen(
-                                schedcde: widget.schedcde,
                                 departureLocation: widget.departureLocation,
                                 arrivalLocation: widget.arrivalLocation,
                                 departDate: widget.departDate,
@@ -2280,31 +2280,38 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                                 shippingLine: widget.shippingLine,
                                 selectedCardType: selectedCardType!,
                                 passengers: passengers
-                                    .map((p) => {
-                                          "name":
+                                    .map((p) => PassengerModel(
+                                          name:
                                               "${p["firstName"]!.text} ${p["lastName"]!.text}",
-                                          "contact": p["contact"]!.text,
-                                        })
+                                          ticketType:
+                                              "adult", // Default ticket type
+                                          fare:
+                                              0.0, // Will be calculated in PaymentScreen
+                                          contactNumber: p["contact"]!.text,
+                                        ))
                                     .toList(),
                                 hasVehicle: hasVehicle,
-                                vehicleDetail: hasVehicle &&
-                                        vehicleDetails.isNotEmpty
-                                    ? vehicleDetails
-                                        .map((v) => {
-                                              "plateNumber":
-                                                  v["plateNumber"]!.text,
-                                              "carType":
-                                                  v["vehicleType"]!.text ==
-                                                          "Other (Not Listed)"
-                                                      ? v["customType"]!.text
-                                                      : v["vehicleType"]!.text,
-                                              "vehicleOwner":
-                                                  "${v["driverFirstName"]!.text} ${v["driverLastName"]!.text}"
-                                            })
-                                        .toList()
-                                    : [],
+                                vehicleDetail:
+                                    hasVehicle && vehicleDetails.isNotEmpty
+                                        ? VehicleInfoModel(
+                                            vehicleType: vehicleDetails
+                                                        .first["vehicleType"]!
+                                                        .text ==
+                                                    "Other (Not Listed)"
+                                                ? vehicleDetails
+                                                    .first["customType"]!.text
+                                                : vehicleDetails
+                                                    .first["vehicleType"]!.text,
+                                            plateNumber: vehicleDetails
+                                                .first["plateNumber"]!.text,
+                                            fare:
+                                                0.0, // Will be calculated in PaymentScreen
+                                            owner:
+                                                "${vehicleDetails.first["driverFirstName"]!.text} ${vehicleDetails.first["driverLastName"]!.text}",
+                                          )
+                                        : null,
                                 bookingReference: bookingReference,
-                                onPaymentCompleted: widget.onBookingCompleted,
+                                schedcde: widget.schedcde,
                               ),
                             ),
                           ).then((_) {

@@ -15,6 +15,10 @@ const Color Ec_BG_SKY_BLUE = Color(0xFFE3F2FD); // Very light, calm
 const Color Ec_BG_GENTLE_BLUE =
     Color(0xFF42A5F5); // Richer, best for accents/cards
 
+// Additional constants for new screens
+const Color kBackgroundColor = Ec_BG_SKY_BLUE;
+const Color kPrimaryColor = Ec_PRIMARY;
+
 
 // import 'package:flutter/material.dart';
 

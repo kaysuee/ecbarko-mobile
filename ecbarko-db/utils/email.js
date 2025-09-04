@@ -496,31 +496,156 @@ const sendPDFEmail = async ({
       }
     });
 
-    doc.fontSize(20).text('E-Ticket', { align: 'center' });
-    doc.moveDown().fontSize(12);
-    doc.text(`Booking Reference: ${bookingReference}`);
-    doc.text(`Route: ${departureLocation} ➝ ${arrivalLocation}`);
-    doc.text(`Departure: ${departDate} at ${departTime}`);
-    doc.text(`Arrival: ${arriveDate} at ${arriveTime}`);
-    doc.text(`Shipping Line: ${shippingLine}`);
-    doc.text(`Card Type: ${selectedCardType}`);
-    doc.moveDown().text(`Passengers:`);
+    // Header with company branding
+    doc.rect(0, 0, 612, 80).fill('#1e40af'); // Blue header background
+    doc.fillColor('white')
+       .fontSize(24)
+       .font('Helvetica-Bold')
+       .text('ECBarko', 50, 25, { align: 'left' });
+    
+    doc.fontSize(16)
+       .text('E-Ticket', 50, 50, { align: 'left' });
+    
+    // Booking reference badge
+    doc.fillColor('#10b981') // Green badge
+       .rect(450, 20, 120, 25)
+       .fill();
+    doc.fillColor('white')
+       .fontSize(10)
+       .text('BOOKING REF', 460, 28, { align: 'center' });
+    doc.fontSize(12)
+       .text(bookingReference, 460, 35, { align: 'center' });
 
-    passengers.forEach(p => {
-      doc.text(`• ${p.name} (Contact: ${p.contact})`);
+    // Reset to black for content
+    doc.fillColor('black');
+    
+    // Main content area
+    let yPosition = 100;
+    
+    // Route information with enhanced styling
+    doc.fontSize(18)
+       .font('Helvetica-Bold')
+       .text('Route Information', 50, yPosition);
+    yPosition += 25;
+    
+    doc.fontSize(14)
+       .font('Helvetica')
+       .text(`${departureLocation}`, 50, yPosition);
+    yPosition += 20;
+    
+    // Arrow with styling
+    doc.fontSize(16)
+       .text('➝', 50, yPosition);
+    yPosition += 20;
+    
+    doc.fontSize(14)
+       .text(`${arrivalLocation}`, 50, yPosition);
+    yPosition += 30;
+
+    // Schedule details in a box
+    doc.rect(50, yPosition, 500, 80)
+       .stroke('#e5e7eb')
+       .fill('#f9fafb');
+    yPosition += 15;
+    
+    doc.fontSize(12)
+       .font('Helvetica-Bold')
+       .text('Departure:', 60, yPosition);
+    doc.font('Helvetica')
+       .text(`${departDate} at ${departTime}`, 150, yPosition);
+    yPosition += 20;
+    
+    doc.font('Helvetica-Bold')
+       .text('Arrival:', 60, yPosition);
+    doc.font('Helvetica')
+       .text(`${arriveDate} at ${arriveTime}`, 150, yPosition);
+    yPosition += 20;
+    
+    doc.font('Helvetica-Bold')
+       .text('Shipping Line:', 60, yPosition);
+    doc.font('Helvetica')
+       .text(shippingLine, 150, yPosition);
+    yPosition += 20;
+    
+    doc.font('Helvetica-Bold')
+       .text('Card Type:', 60, yPosition);
+    doc.font('Helvetica')
+       .text(selectedCardType, 150, yPosition);
+    yPosition += 40;
+
+    // Passengers section
+    doc.fontSize(16)
+       .font('Helvetica-Bold')
+       .text('Passenger Details', 50, yPosition);
+    yPosition += 25;
+    
+    passengers.forEach((p, index) => {
+      doc.rect(50, yPosition, 500, 30)
+         .stroke('#e5e7eb')
+         .fill(index % 2 === 0 ? '#f9fafb' : 'white');
+      
+      doc.fontSize(12)
+         .font('Helvetica-Bold')
+         .text(`Passenger ${index + 1}:`, 60, yPosition + 10);
+      doc.font('Helvetica')
+         .text(p.name, 150, yPosition + 10);
+      doc.text(`Contact: ${p.contact}`, 150, yPosition + 20);
+      
+      yPosition += 35;
     });
 
+    // Vehicle details section
     if (hasVehicle && Array.isArray(vehicleDetail)) {
-      doc.moveDown().text('Vehicle Details:');
+      yPosition += 10;
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('Vehicle Details', 50, yPosition);
+      yPosition += 25;
+      
       vehicleDetail.forEach((v, i) => {
-        doc.text(`- Vehicle ${i + 1}:`);
-        doc.text(`  • Plate Number: ${v.plateNumber}`);
-        doc.text(`  • Car Type: ${v.carType}`);
-        doc.text(`  • Driver: ${v.vehicleOwner}`);
+        doc.rect(50, yPosition, 500, 50)
+           .stroke('#e5e7eb')
+           .fill('#f0f9ff');
+        
+        doc.fontSize(12)
+           .font('Helvetica-Bold')
+           .text(`Vehicle ${i + 1}:`, 60, yPosition + 10);
+        doc.font('Helvetica')
+           .text(`Plate Number: ${v.plateNumber}`, 60, yPosition + 25);
+        doc.text(`Car Type: ${v.carType}`, 60, yPosition + 40);
+        doc.text(`Driver: ${v.vehicleOwner}`, 300, yPosition + 25);
+        
+        yPosition += 60;
       });
     }
 
-    doc.text(`Total Fare: ₱${totalFare}`);
+    // Total fare section with emphasis
+    yPosition += 20;
+    doc.rect(50, yPosition, 500, 40)
+       .fill('#1e40af');
+    
+    doc.fillColor('white')
+       .fontSize(16)
+       .font('Helvetica-Bold')
+       .text('Total Fare:', 60, yPosition + 15);
+    doc.fontSize(20)
+       .text(`₱${totalFare}`, 200, yPosition + 12);
+
+    // Footer
+    yPosition += 60;
+    doc.fillColor('black')
+       .fontSize(10)
+       .font('Helvetica')
+       .text('Thank you for choosing ECBarko!', 50, yPosition, { align: 'center' });
+    doc.text('Safe travels!', 50, yPosition + 15, { align: 'center' });
+    
+    // Add some decorative elements
+    doc.strokeColor('#1e40af')
+       .lineWidth(2)
+       .moveTo(50, 90)
+       .lineTo(550, 90)
+       .stroke();
+
     doc.end();
   });
 };

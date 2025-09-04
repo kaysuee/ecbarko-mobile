@@ -318,6 +318,4 @@ class BookingModel {
       transactionId: transactionId ?? this.transactionId,
     );
   }
-
-
 }

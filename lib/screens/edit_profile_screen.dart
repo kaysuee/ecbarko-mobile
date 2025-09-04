@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:EcBarko/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:io';
-import '../utils/date_format.dart';
 
 String getBaseUrl() {
   return 'https://ecbarko-db.onrender.com';
@@ -28,7 +26,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final birthdateController = TextEditingController();
 
   String? profileImage;
-  bool isEditMode = true;
+  bool isEditMode = false;
   bool isLoading = true;
 
   @override
@@ -371,6 +369,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           backgroundColor: Ec_PRIMARY,
           elevation: 0,
           iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            IconButton(
+              icon: Icon(
+                isEditMode ? Icons.close : Icons.edit,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                if (isEditMode) {
+                  // Cancel editing - reset form fields to original values
+                  setState(() {
+                    isEditMode = false;
+                    if (userData != null) {
+                      nameController.text = userData!['name'] ?? '';
+                      emailController.text = userData!['email'] ?? '';
+                      phoneController.text = userData!['phone'] ?? '';
+                      birthdateController.text = userData!['birthdate'] ?? '';
+                    }
+                  });
+                } else {
+                  // Start editing
+                  setState(() {
+                    isEditMode = true;
+                  });
+                }
+              },
+              tooltip: isEditMode ? 'Cancel Edit' : 'Edit Profile',
+            ),
+          ],
         ),
         body: isLoading
             ? const Center(
@@ -394,8 +420,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _buildProfileHeader(),
           const SizedBox(height: 16),
           _buildFormSection(),
-          const SizedBox(height: 16),
-          _buildSaveButton(),
+          if (isEditMode) ...[
+            const SizedBox(height: 16),
+            _buildSaveButton(),
+          ],
           const SizedBox(height: 80),
         ],
       ),
@@ -461,27 +489,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 as ImageProvider,
                       ),
                       // Camera icon overlay for editing
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _pickImage,
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: Ec_PRIMARY,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              size: 16,
-                              color: Colors.white,
+                      if (isEditMode)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: Ec_PRIMARY,
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(
+                                Icons.camera_alt,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -550,19 +580,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Row(
                 children: [
                   Icon(
-                    Icons.edit_note,
+                    isEditMode ? Icons.edit_note : Icons.person,
                     color: Ec_PRIMARY,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    'Personal Information',
+                    isEditMode
+                        ? 'Edit Personal Information'
+                        : 'Personal Information',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Ec_PRIMARY,
                     ),
                   ),
+                  if (isEditMode) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'EDITING',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 20),
@@ -572,7 +623,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 'Name',
                 Icons.person,
                 nameController,
-                validator: (val) => val!.isEmpty ? 'Name is required' : null,
+                readOnly: !isEditMode,
+                validator: isEditMode
+                    ? (val) => val!.isEmpty ? 'Name is required' : null
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -581,9 +635,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 'Email',
                 Icons.email,
                 emailController,
+                readOnly: !isEditMode,
                 keyboardType: TextInputType.emailAddress,
-                validator: (val) =>
-                    val!.contains('@') ? null : 'Enter valid email',
+                validator: isEditMode
+                    ? (val) => val!.contains('@') ? null : 'Enter valid email'
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -592,9 +648,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 'Phone Number',
                 Icons.phone,
                 phoneController,
+                readOnly: !isEditMode,
                 keyboardType: TextInputType.phone,
-                validator: (val) =>
-                    val!.length >= 10 ? null : 'Enter valid phone number',
+                validator: isEditMode
+                    ? (val) =>
+                        val!.length >= 10 ? null : 'Enter valid phone number'
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -604,9 +663,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Icons.calendar_today,
                 birthdateController,
                 readOnly: true,
-                onTap: _selectBirthdate,
-                validator: (val) =>
-                    val == null || val.isEmpty ? 'Select your birthdate' : null,
+                onTap: isEditMode ? _selectBirthdate : null,
+                validator: isEditMode
+                    ? (val) => val == null || val.isEmpty
+                        ? 'Select your birthdate'
+                        : null
+                    : null,
               ),
             ],
           ),

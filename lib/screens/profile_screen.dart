@@ -1,17 +1,15 @@
 import 'package:EcBarko/screens/account_security_screen.dart';
-import 'package:EcBarko/screens/forgotpassword_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:EcBarko/screens/about_screen.dart' as about_screen;
-import 'package:EcBarko/screens/login_screen.dart';
 import 'package:EcBarko/screens/FAQs_screen.dart';
 import 'package:EcBarko/screens/notification_screen.dart';
+import 'package:EcBarko/screens/help_support_screen.dart';
 import 'package:EcBarko/constants.dart';
 import 'edit_profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
 
 String getBaseUrl() {
   // return 'https://ecbarko.onrender.com'; // iOS or desktop
@@ -283,12 +281,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.help_outline,
-            title: 'Help & Support',
-            subtitle: 'Get help and contact support',
+            title: 'Frequently Asked Questions',
+            subtitle: 'Find answers to common questions',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const FAQsScreen()),
+              );
+            },
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.support_agent,
+            title: 'Help & Support',
+            subtitle: 'Get help from our support team',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const HelpSupportScreen(),
+                ),
               );
             },
           ),

@@ -2,8 +2,8 @@ import 'package:EcBarko/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../screens/dashboard_screen.dart';
-import 'booking_screen.dart';
-import '../screens/rates_screen.dart';
+import '../screens/active_booking_screen.dart';
+import '../screens/schedule_screen.dart';
 import '../screens/RFIDCard_screen.dart';
 import '../constants.dart';
 
@@ -20,14 +20,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = const <Widget>[
     DashboardScreen(),
-    BookingScreen(),
+    ActiveBookingScreen(),
+    ScheduleScreen(),
     RFIDCardScreen(),
     ProfileScreen(),
   ];
 
   final List<Widget> _navItems = const <Widget>[
     Icon(Icons.home, size: 28, color: Colors.white),
-    Icon(Icons.calendar_month, size: 28, color: Colors.white),
+    Icon(Icons.book_online, size: 28, color: Colors.white),
+    Icon(Icons.schedule, size: 28, color: Colors.white),
     Icon(Icons.credit_card, size: 28, color: Colors.white),
     Icon(Icons.person, size: 28, color: Colors.white),
   ];
