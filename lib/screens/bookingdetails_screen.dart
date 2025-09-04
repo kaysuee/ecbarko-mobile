@@ -2279,17 +2279,19 @@ class _BookingDetailsScreenState extends State<BookingDetailsScreen> {
                                 arriveTime: widget.arriveTime,
                                 shippingLine: widget.shippingLine,
                                 selectedCardType: selectedCardType!,
-                                passengers: passengers
-                                    .map((p) => PassengerModel(
-                                          name:
-                                              "${p["firstName"]!.text} ${p["lastName"]!.text}",
-                                          ticketType:
-                                              "adult", // Default ticket type
-                                          fare:
-                                              0.0, // Will be calculated in PaymentScreen
-                                          contactNumber: p["contact"]!.text,
-                                        ))
-                                    .toList(),
+                                passengers: passengers.map((p) {
+                                  // Debug: Print passenger data being created
+                                  print(
+                                      'DEBUG: Creating passenger - First: ${p["firstName"]!.text}, Last: ${p["lastName"]!.text}, Contact: ${p["contact"]!.text}');
+                                  return PassengerModel(
+                                    name:
+                                        "${p["firstName"]!.text} ${p["lastName"]!.text}",
+                                    ticketType: "adult", // Default ticket type
+                                    fare:
+                                        0.0, // Will be calculated in PaymentScreen
+                                    contactNumber: p["contact"]!.text,
+                                  );
+                                }).toList(),
                                 hasVehicle: hasVehicle,
                                 vehicleDetail:
                                     hasVehicle && vehicleDetails.isNotEmpty

@@ -114,13 +114,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
 
       // Convert passengers to the format expected by API
-      List<Map<String, dynamic>> passengerMaps = widget.passengers
-          .map((p) => {
-                'name': p.name,
-                'ticketType': p.ticketType,
-                'contactNumber': p.contactNumber ?? '',
-              })
-          .toList();
+      List<Map<String, dynamic>> passengerMaps = widget.passengers.map((p) {
+        // Debug: Print passenger data being sent to API
+        print(
+            'DEBUG: Sending passenger to API - Name: ${p.name}, Contact: ${p.contactNumber}');
+        return {
+          'name': p.name,
+          'ticketType': p.ticketType,
+          'contactNumber': p.contactNumber ?? '',
+        };
+      }).toList();
 
       // Convert vehicle to the format expected by API
       List<Map<String, dynamic>> vehicleMaps = widget.vehicleDetail != null
