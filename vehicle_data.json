@@ -1,0 +1,1743 @@
+{
+  "vehicles_fares": [
+    {
+      "name": "Bicycle",
+      "category": "TYPE 1",
+      "laneMeter": 1.0,
+      "price": 338,
+      "description": "Mountain Bike, Road Bike",
+      "requiresBrand": false,
+      "requiresModel": false,
+      "isActive": true
+    },
+    {
+      "name": "Bicycle with Sidecar",
+      "category": "TYPE 1",
+      "laneMeter": 2.0,
+      "price": 676,
+      "description": "Tricycle",
+      "requiresBrand": false,
+      "requiresModel": false,
+      "isActive": true
+    },
+    {
+      "name": "Motorcycle",
+      "category": "TYPE 1",
+      "laneMeter": 2.0,
+      "price": 1352,
+      "description": "Scooter, Sports Bike",
+      "requiresBrand": false,
+      "requiresModel": false,
+      "isActive": true
+    },
+    {
+      "name": "Motorcycle with Sidecar",
+      "category": "TYPE 1",
+      "laneMeter": 3.0,
+      "price": 2028,
+      "description": "Tricycle",
+      "requiresBrand": false,
+      "requiresModel": false,
+      "isActive": true
+    },
+    {
+      "name": "Small Cars",
+      "category": "TYPE 2",
+      "laneMeter": 3.5,
+      "price": 2704,
+      "description": "Sedan, Hatchback, SUV",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Medium Vehicles",
+      "category": "TYPE 2",
+      "laneMeter": 4.5,
+      "price": 3380,
+      "description": "Van, Pickup Truck",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Large Vehicles",
+      "category": "TYPE 3",
+      "laneMeter": 5.5,
+      "price": 4056,
+      "description": "6-Wheeler Truck",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Extra Large Vehicles",
+      "category": "TYPE 3",
+      "laneMeter": 6.5,
+      "price": 4732,
+      "description": "8-Wheeler Truck",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Small Bus",
+      "category": "TYPE 4",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "description": "Coaster, Mini Bus",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Medium Bus",
+      "category": "TYPE 4",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "description": "City Bus",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Large Bus",
+      "category": "TYPE 4",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "description": "Provincial Bus",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Extra Large Bus",
+      "category": "TYPE 4",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "description": "Articulated Bus",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Small Truck",
+      "category": "TYPE 4",
+      "laneMeter": 11.5,
+      "price": 8112,
+      "description": "10-Wheeler",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Medium Truck",
+      "category": "TYPE 4",
+      "laneMeter": 12.5,
+      "price": 8788,
+      "description": "12-Wheeler",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    },
+    {
+      "name": "Large Truck",
+      "category": "TYPE 4",
+      "laneMeter": 13.5,
+      "price": 9464,
+      "description": "14-Wheeler",
+      "requiresBrand": true,
+      "requiresModel": true,
+      "isActive": true
+    }
+  ],
+  "brands": [
+    {
+      "name": "Toyota",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Honda",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Nissan",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Mitsubishi",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Suzuki",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Mazda",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Subaru",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Isuzu",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Lexus",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Infiniti",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Acura",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Daihatsu",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Hyundai",
+      "country": "South Korea",
+      "isActive": true
+    },
+    {
+      "name": "Kia",
+      "country": "South Korea",
+      "isActive": true
+    },
+    {
+      "name": "Genesis",
+      "country": "South Korea",
+      "isActive": true
+    },
+    {
+      "name": "SsangYong",
+      "country": "South Korea",
+      "isActive": true
+    },
+    {
+      "name": "Ford",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Chevrolet",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "GMC",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Cadillac",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Buick",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Jeep",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Dodge",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Ram",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Volkswagen",
+      "country": "Germany",
+      "isActive": true
+    },
+    {
+      "name": "BMW",
+      "country": "Germany",
+      "isActive": true
+    },
+    {
+      "name": "Mercedes-Benz",
+      "country": "Germany",
+      "isActive": true
+    },
+    {
+      "name": "Audi",
+      "country": "Germany",
+      "isActive": true
+    },
+    {
+      "name": "Porsche",
+      "country": "Germany",
+      "isActive": true
+    },
+    {
+      "name": "Opel",
+      "country": "Germany",
+      "isActive": true
+    },
+    {
+      "name": "Volvo",
+      "country": "Sweden",
+      "isActive": true
+    },
+    {
+      "name": "Saab",
+      "country": "Sweden",
+      "isActive": true
+    },
+    {
+      "name": "Peugeot",
+      "country": "France",
+      "isActive": true
+    },
+    {
+      "name": "Renault",
+      "country": "France",
+      "isActive": true
+    },
+    {
+      "name": "Citroën",
+      "country": "France",
+      "isActive": true
+    },
+    {
+      "name": "Fiat",
+      "country": "Italy",
+      "isActive": true
+    },
+    {
+      "name": "Alfa Romeo",
+      "country": "Italy",
+      "isActive": true
+    },
+    {
+      "name": "Ferrari",
+      "country": "Italy",
+      "isActive": true
+    },
+    {
+      "name": "Lamborghini",
+      "country": "Italy",
+      "isActive": true
+    },
+    {
+      "name": "Maserati",
+      "country": "Italy",
+      "isActive": true
+    },
+    {
+      "name": "BYD",
+      "country": "China",
+      "isActive": true
+    },
+    {
+      "name": "Geely",
+      "country": "China",
+      "isActive": true
+    },
+    {
+      "name": "Chery",
+      "country": "China",
+      "isActive": true
+    },
+    {
+      "name": "Great Wall",
+      "country": "China",
+      "isActive": true
+    },
+    {
+      "name": "JAC",
+      "country": "China",
+      "isActive": true
+    },
+    {
+      "name": "Jaguar",
+      "country": "UK",
+      "isActive": true
+    },
+    {
+      "name": "Land Rover",
+      "country": "UK",
+      "isActive": true
+    },
+    {
+      "name": "Mini",
+      "country": "UK",
+      "isActive": true
+    },
+    {
+      "name": "Rolls-Royce",
+      "country": "UK",
+      "isActive": true
+    },
+    {
+      "name": "Bentley",
+      "country": "UK",
+      "isActive": true
+    },
+    {
+      "name": "Hino",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "Fuso",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "UD Trucks",
+      "country": "Japan",
+      "isActive": true
+    },
+    {
+      "name": "MAN",
+      "country": "Germany",
+      "isActive": true
+    },
+    {
+      "name": "Scania",
+      "country": "Sweden",
+      "isActive": true
+    },
+    {
+      "name": "Volvo Trucks",
+      "country": "Sweden",
+      "isActive": true
+    },
+    {
+      "name": "Iveco",
+      "country": "Italy",
+      "isActive": true
+    },
+    {
+      "name": "Freightliner",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Peterbilt",
+      "country": "USA",
+      "isActive": true
+    },
+    {
+      "name": "Kenworth",
+      "country": "USA",
+      "isActive": true
+    }
+  ],
+  "models": [
+    {
+      "brandName": "Generic",
+      "name": "Mountain Bike",
+      "type": "Bicycle",
+      "laneMeter": 1.0,
+      "price": 338,
+      "vehicleCategory": "TYPE 1",
+      "isActive": true
+    },
+    {
+      "brandName": "Generic",
+      "name": "Road Bike",
+      "type": "Bicycle",
+      "laneMeter": 1.0,
+      "price": 338,
+      "vehicleCategory": "TYPE 1",
+      "isActive": true
+    },
+    {
+      "brandName": "Generic",
+      "name": "Tricycle",
+      "type": "Bicycle with Sidecar",
+      "laneMeter": 2.0,
+      "price": 676,
+      "vehicleCategory": "TYPE 1",
+      "isActive": true
+    },
+    {
+      "brandName": "Honda",
+      "name": "Wave",
+      "type": "Motorcycle",
+      "laneMeter": 2.0,
+      "price": 1352,
+      "vehicleCategory": "TYPE 1",
+      "isActive": true
+    },
+    {
+      "brandName": "Yamaha",
+      "name": "Mio",
+      "type": "Motorcycle",
+      "laneMeter": 2.0,
+      "price": 1352,
+      "vehicleCategory": "TYPE 1",
+      "isActive": true
+    },
+    {
+      "brandName": "Suzuki",
+      "name": "Raider",
+      "type": "Motorcycle",
+      "laneMeter": 2.0,
+      "price": 1352,
+      "vehicleCategory": "TYPE 1",
+      "isActive": true
+    },
+    {
+      "brandName": "Kawasaki",
+      "name": "Ninja",
+      "type": "Motorcycle",
+      "laneMeter": 2.0,
+      "price": 1352,
+      "vehicleCategory": "TYPE 1",
+      "isActive": true
+    },
+    {
+      "brandName": "Generic",
+      "name": "Motorcycle Tricycle",
+      "type": "Motorcycle with Sidecar",
+      "laneMeter": 3.0,
+      "price": 2028,
+      "vehicleCategory": "TYPE 1",
+      "isActive": true
+    },
+
+    {
+      "brandName": "Toyota",
+      "name": "Vios",
+      "type": "Sedan",
+      "laneMeter": 3.0,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Corolla",
+      "type": "Sedan",
+      "laneMeter": 3.2,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Camry",
+      "type": "Sedan",
+      "laneMeter": 3.5,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Fortuner",
+      "type": "SUV",
+      "laneMeter": 4.0,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "RAV4",
+      "type": "SUV",
+      "laneMeter": 3.8,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Prius",
+      "type": "Hybrid",
+      "laneMeter": 3.2,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Wigo",
+      "type": "Hatchback",
+      "laneMeter": 2.8,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Avanza",
+      "type": "MPV",
+      "laneMeter": 3.5,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Honda",
+      "name": "City",
+      "type": "Sedan",
+      "laneMeter": 3.0,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Honda",
+      "name": "Civic",
+      "type": "Sedan",
+      "laneMeter": 3.2,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Honda",
+      "name": "CR-V",
+      "type": "SUV",
+      "laneMeter": 4.0,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Honda",
+      "name": "HR-V",
+      "type": "SUV",
+      "laneMeter": 3.5,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Nissan",
+      "name": "Almera",
+      "type": "Sedan",
+      "laneMeter": 3.0,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Nissan",
+      "name": "Sentra",
+      "type": "Sedan",
+      "laneMeter": 3.2,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Nissan",
+      "name": "X-Trail",
+      "type": "SUV",
+      "laneMeter": 4.0,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Mirage",
+      "type": "Hatchback",
+      "laneMeter": 2.8,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Lancer",
+      "type": "Sedan",
+      "laneMeter": 3.2,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Montero Sport",
+      "type": "SUV",
+      "laneMeter": 4.0,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Hyundai",
+      "name": "Accent",
+      "type": "Sedan",
+      "laneMeter": 3.0,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Hyundai",
+      "name": "Elantra",
+      "type": "Sedan",
+      "laneMeter": 3.2,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Hyundai",
+      "name": "Tucson",
+      "type": "SUV",
+      "laneMeter": 4.0,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Kia",
+      "name": "Picanto",
+      "type": "Hatchback",
+      "laneMeter": 2.8,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Kia",
+      "name": "Rio",
+      "type": "Sedan",
+      "laneMeter": 3.0,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Kia",
+      "name": "Sportage",
+      "type": "SUV",
+      "laneMeter": 4.0,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Ford",
+      "name": "Fiesta",
+      "type": "Hatchback",
+      "laneMeter": 2.8,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Ford",
+      "name": "Focus",
+      "type": "Sedan",
+      "laneMeter": 3.2,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Ford",
+      "name": "Escape",
+      "type": "SUV",
+      "laneMeter": 4.0,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Chevrolet",
+      "name": "Spark",
+      "type": "Hatchback",
+      "laneMeter": 2.8,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Chevrolet",
+      "name": "Cruze",
+      "type": "Sedan",
+      "laneMeter": 3.2,
+      "price": 2028,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+    {
+      "brandName": "Chevrolet",
+      "name": "Trax",
+      "type": "SUV",
+      "laneMeter": 3.5,
+      "price": 2704,
+      "vehicleCategory": "TYPE 2",
+      "isActive": true
+    },
+
+    {
+      "brandName": "Toyota",
+      "name": "Hiace",
+      "type": "Van",
+      "laneMeter": 4.5,
+      "price": 3380,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Land Cruiser",
+      "type": "SUV",
+      "laneMeter": 4.8,
+      "price": 3380,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Hino Dutro",
+      "type": "Truck",
+      "laneMeter": 5.5,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Hino 300",
+      "type": "Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "N-Series",
+      "type": "Truck",
+      "laneMeter": 5.5,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "F-Series",
+      "type": "Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "Giga",
+      "type": "Truck",
+      "laneMeter": 6.5,
+      "price": 4732,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Fuso Canter",
+      "type": "Truck",
+      "laneMeter": 5.5,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Fuso Fighter",
+      "type": "Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Fuso Shogun",
+      "type": "Truck",
+      "laneMeter": 6.5,
+      "price": 4732,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "Forward",
+      "type": "Medium Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "Elf",
+      "type": "Small Truck",
+      "laneMeter": 5.0,
+      "price": 3380,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Dutro",
+      "type": "Small Truck",
+      "laneMeter": 5.0,
+      "price": 3380,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Ranger",
+      "type": "Medium Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Fuso",
+      "name": "Canter",
+      "type": "Small Truck",
+      "laneMeter": 5.0,
+      "price": 3380,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Fuso",
+      "name": "Fighter",
+      "type": "Medium Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Tata",
+      "name": "Ace",
+      "type": "Small Truck",
+      "laneMeter": 4.5,
+      "price": 3042,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Tata",
+      "name": "LPT",
+      "type": "Medium Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Ashok Leyland",
+      "name": "Dost",
+      "type": "Small Truck",
+      "laneMeter": 4.5,
+      "price": 3042,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Ashok Leyland",
+      "name": "Partner",
+      "type": "Medium Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "TGL",
+      "type": "Medium Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "TGM",
+      "type": "Large Truck",
+      "laneMeter": 7.0,
+      "price": 4732,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "P-Series",
+      "type": "Medium Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "G-Series",
+      "type": "Large Truck",
+      "laneMeter": 7.0,
+      "price": 4732,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "FL",
+      "type": "Medium Truck",
+      "laneMeter": 6.0,
+      "price": 4056,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "FM",
+      "type": "Large Truck",
+      "laneMeter": 7.0,
+      "price": 4732,
+      "vehicleCategory": "TYPE 3",
+      "isActive": true
+    },
+
+    {
+      "brandName": "Toyota",
+      "name": "Hino 700",
+      "type": "Heavy Truck",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Hino 800",
+      "type": "Heavy Truck",
+      "laneMeter": 8.0,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Hino Profia",
+      "type": "Extra Heavy Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "C-Series",
+      "type": "Heavy Truck",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "E-Series",
+      "type": "Heavy Truck",
+      "laneMeter": 8.0,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "Giga Heavy",
+      "type": "Extra Heavy Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Fuso Super Great",
+      "type": "Heavy Truck",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Fuso The Great",
+      "type": "Extra Heavy Truck",
+      "laneMeter": 8.0,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "TGS",
+      "type": "Heavy Truck",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "TGX",
+      "type": "Extra Heavy Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "R-Series",
+      "type": "Heavy Truck",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "S-Series",
+      "type": "Extra Heavy Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "FH",
+      "type": "Heavy Truck",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "FH16",
+      "type": "Extra Heavy Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mercedes-Benz Trucks",
+      "name": "Actros",
+      "type": "Heavy Truck",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mercedes-Benz Trucks",
+      "name": "Actros Heavy",
+      "type": "Extra Heavy Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Coaster",
+      "type": "Large Bus",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Toyota",
+      "name": "Coaster Extra Large",
+      "type": "Extra Large Bus",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Rainbow",
+      "type": "Large Bus",
+      "laneMeter": 8.0,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Melpha",
+      "type": "Extra Large Bus",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "S'elega",
+      "type": "Extra Large Bus",
+      "laneMeter": 9.0,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "Journey",
+      "type": "Large Bus",
+      "laneMeter": 8.0,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "Journey Extra Large",
+      "type": "Extra Large Bus",
+      "laneMeter": 9.0,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Rosa",
+      "type": "Large Bus",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Aero",
+      "type": "Extra Large Bus",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "Lions Coach",
+      "type": "Extra Large Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "Lions Intercity",
+      "type": "Extra Large Bus",
+      "laneMeter": 10.0,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "K-Series",
+      "type": "Extra Large Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "K-Series Intercity",
+      "type": "Extra Large Bus",
+      "laneMeter": 10.0,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "Buses",
+      "type": "Extra Large Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mercedes-Benz Trucks",
+      "name": "Tourismo",
+      "type": "Extra Large Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mercedes-Benz Trucks",
+      "name": "Tourismo Intercity",
+      "type": "Extra Large Bus",
+      "laneMeter": 10.0,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+
+    {
+      "brandName": "Isuzu",
+      "name": "Forward 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Ranger 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Fuso",
+      "name": "Fighter 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Tata",
+      "name": "Prima 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Ashok Leyland",
+      "name": "Titan 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "TGS 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "R-Series 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "FH 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mercedes-Benz Trucks",
+      "name": "Actros 10-Wheeler",
+      "type": "10-Wheeler Truck",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+
+    {
+      "brandName": "Isuzu",
+      "name": "Giga 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Profia 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Fuso",
+      "name": "The Great 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Tata",
+      "name": "Prima 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Ashok Leyland",
+      "name": "Titan 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "TGX 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "S-Series 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "FH16 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mercedes-Benz Trucks",
+      "name": "Actros Heavy 12-Wheeler",
+      "type": "12-Wheeler Truck",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+
+    {
+      "brandName": "Isuzu",
+      "name": "Giga Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Profia 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Fuso",
+      "name": "The Great 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Tata",
+      "name": "Prima 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Ashok Leyland",
+      "name": "Titan 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "TGX 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "S-Series 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "FH16 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mercedes-Benz Trucks",
+      "name": "Actros Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 10.5,
+      "price": 7436,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+
+    {
+      "brandName": "Isuzu",
+      "name": "Giga Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Profia Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Fuso",
+      "name": "The Great Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "MAN",
+      "name": "TGX Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Scania",
+      "name": "S-Series Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Volvo Trucks",
+      "name": "FH16 Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mercedes-Benz Trucks",
+      "name": "Actros Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Iveco",
+      "name": "Stralis Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "DAF",
+      "name": "XF Super Heavy 14-Wheeler",
+      "type": "14-Wheeler Truck",
+      "laneMeter": 14.0,
+      "price": 10140,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Rainbow",
+      "type": "Bus",
+      "laneMeter": 8.0,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Hino",
+      "name": "Melpha",
+      "type": "Bus",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Isuzu",
+      "name": "Journey",
+      "type": "Bus",
+      "laneMeter": 8.0,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Rosa",
+      "type": "Bus",
+      "laneMeter": 7.5,
+      "price": 5408,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Mitsubishi",
+      "name": "Aero",
+      "type": "Bus",
+      "laneMeter": 8.5,
+      "price": 6084,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "King Long",
+      "name": "XML6127",
+      "type": "Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Yutong",
+      "name": "ZK6127",
+      "type": "Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Zhongtong",
+      "name": "LCK6127",
+      "type": "Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Ankai",
+      "name": "HFF6127",
+      "type": "Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    },
+    {
+      "brandName": "Sunlong",
+      "name": "SLK6127",
+      "type": "Bus",
+      "laneMeter": 9.5,
+      "price": 6760,
+      "vehicleCategory": "TYPE 4",
+      "isActive": true
+    }
+  ]
+}

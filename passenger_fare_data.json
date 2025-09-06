@@ -1,0 +1,279 @@
+{
+  "fareRates": [
+    {
+      "type": "Regular Fare",
+      "description": "Standard passenger fare",
+      "price": 470.00,
+      "category": "adult",
+      "ageRange": "24-59 years",
+      "minAge": 24,
+      "maxAge": 59,
+      "discount": 0.0,
+      "isActive": true
+    },
+    {
+      "type": "Student Fare",
+      "description": "Discounted fare for students",
+      "price": 400.00,
+      "category": "student",
+      "ageRange": "8-23 years",
+      "minAge": 8,
+      "maxAge": 23,
+      "discount": 70.00,
+      "discountPercentage": 14.89,
+      "requirements": "Valid student ID required",
+      "isActive": true
+    },
+    {
+      "type": "Senior Citizen Fare",
+      "description": "Discounted fare for senior citizens",
+      "price": 335.00,
+      "category": "senior",
+      "ageRange": "60+ years",
+      "minAge": 60,
+      "maxAge": null,
+      "discount": 135.00,
+      "discountPercentage": 28.72,
+      "requirements": "Valid senior citizen ID required",
+      "isActive": true
+    },
+    {
+      "type": "Child Fare",
+      "description": "Discounted fare for children",
+      "price": 235.00,
+      "category": "child",
+      "ageRange": "3-7 years",
+      "minAge": 3,
+      "maxAge": 7,
+      "discount": 235.00,
+      "discountPercentage": 50.0,
+      "requirements": "Children aged 3-7 years old",
+      "isActive": true
+    },
+    {
+      "type": "Infant Fare",
+      "description": "Free fare for infants",
+      "price": 0.00,
+      "category": "infant",
+      "ageRange": "0-2 years",
+      "minAge": 0,
+      "maxAge": 2,
+      "discount": 470.00,
+      "discountPercentage": 100.0,
+      "requirements": "Infants aged 0-2 years old (must be accompanied by adult)",
+      "isActive": true
+    }
+  ],
+  "terminalFees": [
+    {
+      "type": "Regular Passenger",
+      "description": "Terminal fee for regular passengers",
+      "price": 30.00,
+      "category": "adult",
+      "ageRange": "24-59 years",
+      "minAge": 24,
+      "maxAge": 59,
+      "isActive": true
+    },
+    {
+      "type": "Student Terminal Fee",
+      "description": "Terminal fee for students",
+      "price": 0.00,
+      "category": "student",
+      "ageRange": "8-23 years",
+      "minAge": 8,
+      "maxAge": 23,
+      "discount": 30.00,
+      "discountPercentage": 100.0,
+      "requirements": "Valid student ID required",
+      "isActive": true
+    },
+    {
+      "type": "Senior Citizen Terminal Fee",
+      "description": "Terminal fee for senior citizens",
+      "price": 0.00,
+      "category": "senior",
+      "ageRange": "60+ years",
+      "minAge": 60,
+      "maxAge": null,
+      "discount": 30.00,
+      "discountPercentage": 100.0,
+      "requirements": "Valid senior citizen ID required",
+      "isActive": true
+    },
+    {
+      "type": "Child Terminal Fee",
+      "description": "Terminal fee for children",
+      "price": 0.00,
+      "category": "child",
+      "ageRange": "3-7 years",
+      "minAge": 3,
+      "maxAge": 7,
+      "discount": 30.00,
+      "discountPercentage": 100.0,
+      "requirements": "Children aged 3-7 years old",
+      "isActive": true
+    },
+    {
+      "type": "Infant Terminal Fee",
+      "description": "Terminal fee for infants",
+      "price": 0.00,
+      "category": "infant",
+      "ageRange": "0-2 years",
+      "minAge": 0,
+      "maxAge": 2,
+      "discount": 30.00,
+      "discountPercentage": 100.0,
+      "requirements": "Infants aged 0-2 years old (must be accompanied by adult)",
+      "isActive": true
+    }
+  ],
+  "fareCategories": [
+    {
+      "name": "adult",
+      "displayName": "Adult",
+      "description": "Regular adult passengers",
+      "ageRange": "24-59 years",
+      "minAge": 24,
+      "maxAge": 59,
+      "baseFare": 470.00,
+      "terminalFee": 30.00,
+      "isActive": true
+    },
+    {
+      "name": "student",
+      "displayName": "Student",
+      "description": "Students with valid ID",
+      "ageRange": "8-23 years",
+      "minAge": 8,
+      "maxAge": 23,
+      "baseFare": 400.00,
+      "terminalFee": 0.00,
+      "discount": 70.00,
+      "isActive": true
+    },
+    {
+      "name": "senior",
+      "displayName": "Senior Citizen",
+      "description": "Senior citizens with valid ID",
+      "ageRange": "60+ years",
+      "minAge": 60,
+      "maxAge": null,
+      "baseFare": 335.00,
+      "terminalFee": 0.00,
+      "discount": 135.00,
+      "isActive": true
+    },
+    {
+      "name": "child",
+      "displayName": "Child",
+      "description": "Children aged 3-7 years",
+      "ageRange": "3-7 years",
+      "minAge": 3,
+      "maxAge": 7,
+      "baseFare": 235.00,
+      "terminalFee": 0.00,
+      "discount": 235.00,
+      "isActive": true
+    },
+    {
+      "name": "infant",
+      "displayName": "Infant",
+      "description": "Infants aged 0-2 years",
+      "ageRange": "0-2 years",
+      "minAge": 0,
+      "maxAge": 2,
+      "baseFare": 0.00,
+      "terminalFee": 0.00,
+      "discount": 470.00,
+      "isActive": true
+    }
+  ],
+  "fareRules": [
+    {
+      "rule": "age_verification",
+      "description": "Age verification required for child and senior citizen fares",
+      "requirements": ["Valid ID", "Birth certificate for children"],
+      "isActive": true
+    },
+    {
+      "rule": "student_discount",
+      "description": "Student discount requires valid student ID",
+      "requirements": ["Valid student ID", "Current enrollment status"],
+      "isActive": true
+    },
+    {
+      "rule": "senior_citizen_discount",
+      "description": "Senior citizen discount requires valid senior citizen ID",
+      "requirements": ["Valid senior citizen ID", "Age 60+ years"],
+      "isActive": true
+    },
+    {
+      "rule": "child_fare",
+      "description": "Child fare applies to children aged 3-7 years",
+      "requirements": ["Age verification", "Accompanied by adult"],
+      "isActive": true
+    },
+    {
+      "rule": "terminal_fee_exemption",
+      "description": "Terminal fee exemption for students, senior citizens, and children",
+      "requirements": ["Valid ID", "Eligible fare category"],
+      "isActive": true
+    }
+  ],
+  "fareCalculation": {
+    "baseFare": 470.00,
+    "terminalFee": 30.00,
+    "totalFareFormula": "baseFare + terminalFee - discount",
+    "discountCalculation": {
+      "student": {
+        "discountAmount": 70.00,
+        "discountPercentage": 14.89,
+        "terminalFeeExemption": true
+      },
+      "senior": {
+        "discountAmount": 135.00,
+        "discountPercentage": 28.72,
+        "terminalFeeExemption": true
+      },
+      "child": {
+        "discountAmount": 235.00,
+        "discountPercentage": 50.0,
+        "terminalFeeExemption": true
+      }
+    }
+  },
+  "fareHistory": [
+    {
+      "effectiveDate": "2024-01-01",
+      "fareType": "base_fare",
+      "oldPrice": 450.00,
+      "newPrice": 470.00,
+      "changeAmount": 20.00,
+      "changePercentage": 4.44,
+      "reason": "Annual fare adjustment"
+    },
+    {
+      "effectiveDate": "2024-01-01",
+      "fareType": "terminal_fee",
+      "oldPrice": 25.00,
+      "newPrice": 30.00,
+      "changeAmount": 5.00,
+      "changePercentage": 20.0,
+      "reason": "Terminal fee adjustment"
+    }
+  ],
+  "fareNotes": [
+    "All fares are subject to change without prior notice",
+    "Valid ID required for discounted fares",
+    "Infants (0-2 years) travel free when accompanied by adult",
+    "Children (3-7 years) pay half fare",
+    "Adults (24-59 years) pay regular fare",
+    "Students (8-23 years) pay discounted fare with valid student ID",
+    "Senior citizens (60+ years) pay discounted fare with valid senior citizen ID",
+    "Terminal fees are waived for students, senior citizens, children, and infants",
+    "Fares may vary during peak seasons and holidays",
+    "Group discounts may be available for 10+ passengers",
+    "Birthdate verification required for age-based fare categories"
+  ]
+}
